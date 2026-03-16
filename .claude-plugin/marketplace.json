@@ -1,0 +1,51 @@
+{
+  "name": "designskills",
+  "owner": {
+    "name": "Arnav Puri",
+    "url": "https://github.com/ArnavPuri"
+  },
+  "metadata": {
+    "description": "Design skills for Claude Code and AI agents — powered by Gemini 3.1 Flash Image Preview. 28 skills for graphic design, UI design, design systems, and more.",
+    "version": "1.0.0",
+    "repository": "https://github.com/ArnavPuri/designskills",
+    "license": "MIT"
+  },
+  "plugins": [
+    {
+      "name": "designskills",
+      "description": "Professional-grade graphic design, UI design, and visual content skills with Gemini 3.1 Flash image generation",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/design-context",
+        "./skills/image-generation",
+        "./skills/graphic-design",
+        "./skills/social-media-graphic",
+        "./skills/poster-design",
+        "./skills/thumbnail-design",
+        "./skills/ad-creative-design",
+        "./skills/product-mockup",
+        "./skills/infographic",
+        "./skills/banner-design",
+        "./skills/ui-design",
+        "./skills/landing-page-design",
+        "./skills/dashboard-design",
+        "./skills/mobile-ui-design",
+        "./skills/hero-section",
+        "./skills/card-design",
+        "./skills/dark-mode",
+        "./skills/email-design",
+        "./skills/color-palette",
+        "./skills/typography",
+        "./skills/layout-composition",
+        "./skills/brand-identity",
+        "./skills/icon-design",
+        "./skills/design-system",
+        "./skills/design-critique",
+        "./skills/motion-design",
+        "./skills/presentation-design",
+        "./skills/image-treatment"
+      ]
+    }
+  ]
+}

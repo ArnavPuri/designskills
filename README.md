@@ -77,19 +77,26 @@ export GEMINI_API_KEY="your-api-key"
 ### Using npx (recommended)
 
 ```bash
-npx skills install designskills
+# Install all 28 skills
+npx skills add ArnavPuri/designskills
+
+# Install specific skills only
+npx skills add ArnavPuri/designskills --skill graphic-design image-generation
+
+# List available skills
+npx skills add ArnavPuri/designskills --list
 ```
 
 ### Manual clone
 
 ```bash
-git clone https://github.com/arnavpuri/designskills.git ~/.claude/skills/designskills
+git clone https://github.com/ArnavPuri/designskills.git ~/.claude/skills/designskills
 ```
 
 ### Git submodule
 
 ```bash
-git submodule add https://github.com/arnavpuri/designskills.git .claude/skills/designskills
+git submodule add https://github.com/ArnavPuri/designskills.git .claude/skills/designskills
 ```
 
 ## Quick Start
