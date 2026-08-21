@@ -128,7 +128,7 @@ The `design-context` skill stores brand parameters that all other skills referen
 
 ## Glittr Integration
 
-Future releases will support [Glittr](https://glittr.com) for editable design output. This will allow you to take AI-generated designs and refine them in a visual editor, bridging the gap between AI generation and manual polish.
+Future releases will support [Glittr](https://useglittr.com) for editable design output. This will allow you to take AI-generated designs and refine them in a visual editor, bridging the gap between AI generation and manual polish.
 
 ## Contributing
 
