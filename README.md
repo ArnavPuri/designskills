@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**Design skills for Claude Code and AI agents — powered by Gemini 3.1 Flash Image Preview.**
+**Design skills for Claude Code and AI agents — powered by Gemini 3.1 Flash Image Preview, with optional Atlas Cloud image generation.**
 
 Skills that make AI agents produce professional-grade graphic design, UI design, and visual content. Give it a product image and a one-line prompt, and get an eye-catching graphic back. These skills encode expert design knowledge — composition, color theory, typography, prompt engineering — that results in 10x better visual output.
 
@@ -17,7 +17,7 @@ Skills that make AI agents produce professional-grade graphic design, UI design,
 | Skill | Description |
 |-------|-------------|
 | `design-context` | Establish brand identity, style, and audience context for all other skills |
-| `image-generation` | Gemini 3.1 Flash Image Preview pipeline — text-to-image, image editing, multi-turn refinement |
+| `image-generation` | Gemini 3.1 Flash Image Preview pipeline with an optional Atlas Cloud provider — text-to-image, image editing, multi-turn refinement |
 
 ### Graphic Design
 
@@ -73,6 +73,16 @@ Skills that make AI agents produce professional-grade graphic design, UI design,
 pip install google-genai Pillow
 export GEMINI_API_KEY="your-api-key"
 ```
+
+Atlas Cloud is optional and does not change the Gemini default:
+
+```bash
+export ATLASCLOUD_API_KEY="your-api-key"
+python tools/atlas-generate.py --prompt "A bold launch poster" --output poster.png
+```
+
+See `skills/image-generation/SKILL.md` for Atlas text-to-image, reference-image
+editing, supported sizes, quality settings, and bounded polling behavior.
 
 ### Using npx (recommended)
 
