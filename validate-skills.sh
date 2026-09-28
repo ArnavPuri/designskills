@@ -82,6 +82,58 @@ validate_skill() {
         return
     fi
 
+    # Check name format (lowercase letters, digits, hyphens)
+    if ! [[ "$name_field" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+        red "FAIL: $dir_name - name must be lowercase letters, digits, and hyphens"
+        ERRORS=$((ERRORS + 1))
+        return
+    fi
+
+    if [[ "$license_field" != "MIT" ]]; then
+        red "FAIL: $dir_name - license must be MIT (found '$license_field')"
+        ERRORS=$((ERRORS + 1))
+        return
+    fi
+
+    # Full description text (handles folded '>' / '|' multi-line values)
+    local description_text
+    description_text="$(echo "$frontmatter" | awk '
+        /^description:/ { on=1; sub(/^description:[[:space:]]*[>|]?-?[[:space:]]*/, ""); if ($0 != "") printf "%s ", $0; next }
+        on && /^[a-zA-Z_-]+:/ { on=0 }
+        on { gsub(/^[[:space:]]+/, ""); printf "%s ", $0 }
+    ' | sed 's/[[:space:]]*$//')"
+
+    if [[ ${#description_text} -lt 50 ]]; then
+        red "FAIL: $dir_name - description is too short (${#description_text} chars); say what the skill does and when to use it"
+        ERRORS=$((ERRORS + 1))
+        return
+    fi
+
+    if [[ ${#description_text} -gt 1024 ]]; then
+        red "FAIL: $dir_name - description is ${#description_text} chars (max 1024)"
+        ERRORS=$((ERRORS + 1))
+        return
+    fi
+
+    # Referenced skills (`skill-name` followed by "skill") must exist
+    local ref missing_refs=""
+    while IFS= read -r ref; do
+        [[ -z "$ref" ]] && continue
+        if [[ ! -d "$SKILLS_DIR/$ref" ]]; then
+            missing_refs+=" $ref"
+        fi
+    done < <(grep -oE '`[a-z0-9]+(-[a-z0-9]+)*` skill' "$skill_file" | sed -E 's/`([^`]*)` skill/\1/' | sort -u)
+    if [[ -n "$missing_refs" ]]; then
+        red "FAIL: $dir_name - references unknown skill(s):$missing_refs"
+        ERRORS=$((ERRORS + 1))
+        return
+    fi
+
+    # Every skill except design-context itself should consume design context
+    if [[ "$dir_name" != "design-context" ]] && ! grep -q "design-context" "$skill_file"; then
+        yellow "WARN: $dir_name - does not reference design-context"
+    fi
+
     # Check line count
     local line_count
     line_count="$(wc -l < "$skill_file" | tr -d ' ')"

@@ -25,13 +25,16 @@ Before gathering new information, check for existing design context.
 Scan the codebase for existing design tokens in this priority order:
 
 1. **`.agents/design-context.md`** -- previously saved context (highest priority)
-2. **`tailwind.config.js` / `tailwind.config.ts`** -- theme.extend.colors, fontFamily, spacing
-3. **CSS custom properties** -- `--color-primary`, `--font-heading`, etc. in `:root` or `globals.css`
-4. **`package.json`** -- project name, description
-5. **Design token files** -- `tokens.json`, `theme.js`, `design-system.*`
-6. **Existing components** -- scan for recurring color values, font stacks, spacing patterns
-7. **`manifest.json` / `site.webmanifest`** -- theme_color, name
-8. **Figma variables** -- if Figma MCP is available, pull variables from connected files
+2. **`tailwind.config.js` / `tailwind.config.ts`** -- theme.extend.colors, fontFamily, spacing (Tailwind v3)
+3. **CSS `@theme` block** -- Tailwind v4 defines tokens in CSS: `@theme { --color-primary: ...; --font-sans: ...; }`
+4. **CSS custom properties** -- `--color-primary`, `--font-heading`, etc. in `:root` or `globals.css`. shadcn/ui projects use `--primary`, `--secondary`, `--accent`, `--muted`, `--destructive`, `--radius`, often as bare HSL components (`222 47% 11%`) or `oklch(...)` -- convert to hex when saving
+5. **`package.json`** -- project name, description
+6. **Design token files** -- `tokens.json` (W3C DTCG `$value`/`$type`), `theme.js`, `design-system.*`
+7. **Font loading** -- `next/font` imports, Google Fonts `<link>` tags, `@font-face` rules
+8. **Existing components** -- scan for recurring color values, font stacks, spacing patterns
+9. **`manifest.json` / `site.webmanifest`** -- theme_color, name
+10. **Brand assets** -- `logo.svg`, `public/`, `assets/`, `brand/` folders, favicon
+11. **Figma variables** -- if Figma MCP is available, pull variables from connected files
 
 ### Auto-Detection Logic
 
@@ -152,6 +155,18 @@ Identify the primary style from these archetypes:
 | Logo Description | Describe the logo visually | "Geometric 'A' mark in primary blue" |
 | Logo Usage | Where/how to use it | "Top-left, min 32px height" |
 | Icon Style | Preferred icon style | "Outlined, 2px stroke, rounded caps" |
+| Logo Files | Paths to real logo files | `public/logo.svg`, `brand/logo-white.png` |
+| Reference Images | Product photos, past designs the user likes | `assets/product-hero.png` |
+
+Record file paths, not just descriptions. Image-generation skills pass these files as `--image` references, which reproduces a logo or product far more faithfully than a text description.
+
+### Brand Rules
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| Always | Non-negotiables | "Logo on white or primary only", "Sentence case headlines" |
+| Never | Things to avoid | "No gradients on the logo", "No stock photos of handshakes" |
+| Voice samples | 2-3 real headlines or taglines | "Ship faster. Sleep better." |
 
 ### Platform Preferences
 
@@ -217,7 +232,14 @@ Save the gathered context to `.agents/design-context.md` using this template:
 
 ## Brand Marks
 - **Logo:** [Description]
+- **Logo Files:** [paths]
+- **Reference Images:** [paths]
 - **Icon Style:** [Description]
+
+## Brand Rules
+- **Always:** [rules]
+- **Never:** [rules]
+- **Voice samples:** [examples]
 
 ## Platform Priority
 - Web: [priority]
@@ -225,6 +247,20 @@ Save the gathered context to `.agents/design-context.md` using this template:
 - Social: [priority]
 - Print: [priority]
 ```
+
+### Validate Before Saving
+
+Check the palette before writing it, and tell the user about any failures (don't silently change their brand colors -- propose the nearest passing shade):
+
+- Body text (Neutral 800) on Neutral 50 and on white: >= 4.5:1
+- Primary as a button background with white text: >= 4.5:1 (if it fails, use Primary Dark for text-bearing buttons)
+- Primary as link text on white: >= 4.5:1
+- Neutral 500 placeholder/muted text on white: >= 4.5:1 if it carries meaning
+- Borders and focus rings (Neutral 200 is decorative only; focus rings need >= 3:1 against their background)
+
+Relative luminance: `L = 0.2126 R + 0.7152 G + 0.0722 B` on linearized sRGB channels; ratio = `(L1 + 0.05) / (L2 + 0.05)`. Compute it with a short script rather than estimating by eye.
+
+Add a `Last updated: YYYY-MM-DD` line and the detection source (e.g. "from tailwind.config.ts") at the top of the file so later sessions know how fresh it is.
 
 ---
 
@@ -277,8 +313,15 @@ Accent: #F59E0B (amber-500)
 Neutral: Tailwind gray scale
 Heading Font: Inter
 Body Font: Inter
+Success: #10B981 (fills/icons) / #047857 (text)
+Warning: #F59E0B (fills/icons) / #B45309 (text)
+Error:   #EF4444 (fills/icons) / #B91C1C (text)
 Style: Minimal
 Tone: Professional
 ```
 
+The lighter semantic shades fail 4.5:1 as text on white (2.5:1, 2.2:1, 3.8:1) -- use them for backgrounds, badges with dark text, and icons; use the darker shades for text.
+
 Always note in the output that defaults were used and recommend setting up proper design context.
+
+Note: Inter everywhere plus blue-600 is the most common "AI-generated" look. When using defaults for anything expressive (posters, social graphics, landing pages), ask one quick question -- "any colors, fonts, or sites you like the feel of?" -- before falling back.
