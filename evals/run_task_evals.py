@@ -93,20 +93,21 @@ def make_workspace(task, with_skills=True):
 
 
 def parse_stream(lines):
-    skills, final, cost = [], "", None
+    skills, final, cost, model = [], "", None, None
     for line in lines:
         try:
             event = json.loads(line)
         except json.JSONDecodeError:
             continue
         if event.get("type") == "assistant":
+            model = model or event.get("message", {}).get("model")
             for block in event.get("message", {}).get("content", []):
                 if block.get("type") == "tool_use" and block.get("name") == "Skill":
                     skills.append(block.get("input", {}).get("skill", "").split(":")[-1].strip("/"))
         elif event.get("type") == "result":
             final = event.get("result") or ""
             cost = event.get("total_cost_usd")
-    return {"skills": skills, "final": final, "cost_usd": cost}
+    return {"skills": skills, "final": final, "cost_usd": cost, "model": model}
 
 
 def isolated_env(ws):
@@ -332,7 +333,7 @@ def evaluate(task, args):
               if not (args.baseline and c["type"] == "skill_loaded")]
     passed = sum(c["pass"] for c in checks)
     outcome = {
-        "id": task["id"], "workspace": ws, "skills_loaded": run["skills"], "cost_usd": run.get("cost_usd"),
+        "id": task["id"], "workspace": ws, "skills_loaded": run["skills"], "cost_usd": run.get("cost_usd"), "model": run.get("model"),
         "checks": checks, "score": round(passed / len(checks), 2) if checks else 0,
         "pass": all(c["pass"] for c in checks if c["required"]) and passed / max(len(checks), 1) >= args.pass_ratio,
     }

@@ -1,0 +1,190 @@
+{
+  "tasks": {
+    "email-design": {
+      "baseline": {
+        "passed": 6,
+        "total": 8,
+        "checks": [
+          {
+            "check": "file_exists welcome-email.html",
+            "pass": true,
+            "detail": "welcome-email.html"
+          },
+          {
+            "check": "layout tables marked role=presentation",
+            "pass": true,
+            "detail": "matches in: ['welcome-email.html']"
+          },
+          {
+            "check": "no flexbox/grid (Outlook)",
+            "pass": true,
+            "detail": "matches in: none"
+          },
+          {
+            "check": "600px content width",
+            "pass": true,
+            "detail": "matches in: ['welcome-email.html']"
+          },
+          {
+            "check": "file_contains welcome-email.html",
+            "pass": true,
+            "detail": "matches in: ['welcome-email.html']"
+          },
+          {
+            "check": "brand_colors welcome-email.html",
+            "pass": false,
+            "detail": "0 brand colors: []"
+          },
+          {
+            "check": "under Gmail's 102KB clipping limit",
+            "pass": true,
+            "detail": "7.4 KB"
+          },
+          {
+            "check": "audit welcome-email.html",
+            "pass": false,
+            "detail": "8 contrast failures (worst 3.71:1 on \"Ember Coffee Roasters \u00b7 \")"
+          }
+        ],
+        "skills_loaded": [],
+        "cost_usd": 0.1127078,
+        "image": "docs/showcase/raw/email-design-baseline.png",
+        "note": null,
+        "model": "claude-sonnet-5",
+        "date": "2026-09-28"
+      },
+      "skills": {
+        "passed": 7,
+        "total": 8,
+        "checks": [
+          {
+            "check": "file_exists welcome-email.html",
+            "pass": true,
+            "detail": "welcome-email.html"
+          },
+          {
+            "check": "layout tables marked role=presentation",
+            "pass": true,
+            "detail": "matches in: ['welcome-email.html']"
+          },
+          {
+            "check": "no flexbox/grid (Outlook)",
+            "pass": true,
+            "detail": "matches in: none"
+          },
+          {
+            "check": "600px content width",
+            "pass": true,
+            "detail": "matches in: ['welcome-email.html']"
+          },
+          {
+            "check": "file_contains welcome-email.html",
+            "pass": true,
+            "detail": "matches in: ['welcome-email.html']"
+          },
+          {
+            "check": "brand_colors welcome-email.html",
+            "pass": true,
+            "detail": "9 brand colors: ['#1c1917', '#292524', '#2f4a3a', '#78716c', '#b4471f', '#e7e5e4', '#e9b949', '#f5f5f4', '#fafaf9']"
+          },
+          {
+            "check": "under Gmail's 102KB clipping limit",
+            "pass": true,
+            "detail": "12.0 KB"
+          },
+          {
+            "check": "audit welcome-email.html",
+            "pass": false,
+            "detail": "3 contrast failures (worst 4.4:1 on \"Ember Coffee Roasters, 4\")"
+          }
+        ],
+        "skills_loaded": [
+          "email-design"
+        ],
+        "cost_usd": 0.3524224,
+        "image": "docs/showcase/raw/email-design-skills.png",
+        "note": null,
+        "model": "claude-sonnet-5",
+        "date": "2026-09-28"
+      }
+    },
+    "hero-section": {
+      "baseline": {
+        "passed": 2,
+        "total": 5,
+        "checks": [
+          {
+            "check": "file_exists index.html",
+            "pass": true,
+            "detail": "index.html"
+          },
+          {
+            "check": "brand_colors index.html",
+            "pass": false,
+            "detail": "0 brand colors: []"
+          },
+          {
+            "check": "uses brand fonts",
+            "pass": false,
+            "detail": "matches in: none"
+          },
+          {
+            "check": "hero image not lazy-loaded",
+            "pass": true,
+            "detail": "matches in: none"
+          },
+          {
+            "check": "audit index.html",
+            "pass": false,
+            "detail": "1 contrast failures (worst 3.44:1 on \"Small-batch \u00b7 Roasted we\"); animation without prefers-reduced-motion; 5 tap targets under 24px"
+          }
+        ],
+        "skills_loaded": [],
+        "cost_usd": 0.15477419999999997,
+        "image": "docs/showcase/raw/hero-section-baseline.png",
+        "note": null,
+        "model": "claude-sonnet-5",
+        "date": "2026-09-28"
+      },
+      "skills": {
+        "passed": 4,
+        "total": 5,
+        "checks": [
+          {
+            "check": "file_exists index.html",
+            "pass": true,
+            "detail": "index.html"
+          },
+          {
+            "check": "brand_colors index.html",
+            "pass": true,
+            "detail": "11 brand colors: ['#1c1917', '#292524', '#2f4a3a', '#78716c', '#8f3715', '#b4471f', '#d9663a', '#e7e5e4', '#e9b949', '#f5f5f4', '#fafaf9']"
+          },
+          {
+            "check": "uses brand fonts",
+            "pass": true,
+            "detail": "matches in: ['index.html']"
+          },
+          {
+            "check": "hero image not lazy-loaded",
+            "pass": true,
+            "detail": "matches in: none"
+          },
+          {
+            "check": "audit index.html",
+            "pass": false,
+            "detail": "animation without prefers-reduced-motion; 1 tap targets under 24px"
+          }
+        ],
+        "skills_loaded": [
+          "hero-section"
+        ],
+        "cost_usd": 0.2724142,
+        "image": "docs/showcase/raw/hero-section-skills.png",
+        "note": null,
+        "model": "claude-sonnet-5",
+        "date": "2026-09-28"
+      }
+    }
+  }
+}

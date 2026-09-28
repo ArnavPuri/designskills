@@ -114,13 +114,13 @@ def run_side(task, side, args):
         "cost_usd": outcome["cost_usd"],
         "image": os.path.relpath(dest, ROOT) if os.path.exists(dest) else None,
         "note": note,
-        "model": args.model or "Claude Code default",
+        "model": outcome.get("model") or args.model or "Claude Code default",
         "date": datetime.date.today().isoformat(),
     }
     if not args.keep:
         shutil.rmtree(outcome["workspace"], ignore_errors=True)
     else:
-        record["workspace"] = outcome["workspace"]
+        print(f"      kept workspace: {outcome['workspace']}")
     return record
 
 
