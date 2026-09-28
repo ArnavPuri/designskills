@@ -1,0 +1,19 @@
+{
+  "id": "design-context-detect",
+  "skill": "design-context",
+  "prompt": "Set up the design context for this project from what's already in the codebase. Don't ask me questions; use sensible assumptions for anything missing and note them.",
+  "seed": {
+    "tailwind.config.js": "evals/fixtures/tailwind.config.js",
+    "package.json": "evals/fixtures/package.json"
+  },
+  "budget_usd": 3,
+  "checks": [
+    {"type": "skill_loaded", "skill": "design-context", "required": true},
+    {"type": "file_exists", "glob": ".agents/design-context.md", "required": true},
+    {"type": "file_contains", "glob": ".agents/design-context.md", "pattern": "#0F766E", "flags": "i", "label": "detected primary color"},
+    {"type": "file_contains", "glob": ".agents/design-context.md", "pattern": "Plus Jakarta Sans", "label": "detected body font"},
+    {"type": "file_contains", "glob": ".agents/design-context.md", "pattern": "Space Grotesk", "label": "detected heading font"},
+    {"type": "file_contains", "glob": ".agents/design-context.md", "pattern": "Tidepool", "label": "detected brand name"},
+    {"type": "command", "run": "python {skills}/design-context/scripts/contrast.py --context .agents/design-context.md", "label": "saved palette passes contrast checks"}
+  ]
+}

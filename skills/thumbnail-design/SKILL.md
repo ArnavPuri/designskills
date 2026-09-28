@@ -432,7 +432,8 @@ Generate as self-contained HTML with fixed dimensions:
 </body>
 </html>
 <!-- Export (window size = canvas size, so the centered canvas fills the frame exactly):
-     chromium --headless --hide-scrollbars --window-size=1280,720 --screenshot=thumb.png thumb.html -->
+     node <graphic-design>/scripts/render.mjs thumb.html --size 1280x720 --out thumb.png
+     (without the graphic-design skill: chromium --headless --hide-scrollbars --window-size=1280,720 --screenshot=thumb.png thumb.html) -->
 ```
 
 Then Read the PNG and run the same 168x94 shrink test as for Gemini output.

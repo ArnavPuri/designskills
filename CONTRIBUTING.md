@@ -6,12 +6,15 @@ Thank you for your interest in contributing design skills. This guide covers eve
 
 ### Directory Structure
 
-Each skill lives in its own directory at the repository root:
+Each skill lives in its own directory under `skills/`:
 
 ```
-your-skill-name/
+skills/your-skill-name/
   SKILL.md
+  scripts/        # optional: helper scripts the skill tells the agent to run
 ```
+
+Reference bundled scripts as `<your-skill-name>/scripts/file.py` (the skill's directory), never by a repo-relative path. Installed skills don't include the rest of the repository.
 
 The directory name must be lowercase, use hyphens for spaces, and match the `name` field in the SKILL.md frontmatter.
 
@@ -77,10 +80,10 @@ bash validate-skills.sh
 This checks:
 
 - YAML frontmatter is present and valid
-- `name` field matches the directory name
-- `description` and `license` fields are present
+- `name` field matches the directory name and is lowercase-hyphenated
+- `description` is 50-1024 characters and `license` is MIT
+- Referenced skills exist
 - File is under 500 lines
-- File uses `.md` extension
 
 You can also validate a single skill:
 
@@ -88,11 +91,20 @@ You can also validate a single skill:
 bash validate-skills.sh your-skill-name
 ```
 
+Then run the static checks and script tests (the same checks CI runs):
+
+```bash
+python evals/static_checks.py            # script flags, aspect ratios, code blocks, trigger collisions
+python -m unittest discover tests        # if you added or changed a script
+```
+
+For a new skill, also add routing cases to `evals/triggers.jsonl`: 2-3 prompts that should load it, plus one near-miss that belongs to a sibling. If the skill produces files, consider a task in `evals/tasks/`. See [evals/README.md](evals/README.md).
+
 ## Pull Request Process
 
 1. **Fork** the repository and create a feature branch (`feat/your-skill-name`).
 2. **Create** the skill directory and `SKILL.md` following the format above.
-3. **Validate** your skill by running `validate-skills.sh`.
+3. **Validate** your skill with `validate-skills.sh`, `evals/static_checks.py`, and the unit tests.
 4. **Update** the README.md to include your skill in the appropriate category table.
 5. **Submit** a pull request with:
    - A clear title: `Add skill: your-skill-name`

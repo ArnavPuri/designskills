@@ -163,31 +163,45 @@ save_first_image(r3, "v3.png")
 
 ### CLI Tool
 
+The skill ships its scripts in `scripts/`. Below, `<image-generation>` means this skill's directory (the base directory shown when the skill loads; `skills/image-generation` in a clone of the repo). Run them from the user's project so outputs land there.
+
 ```bash
 # Text-to-image
-python tools/gemini-generate.py --prompt "..." --output graphic.png
+python <image-generation>/scripts/gemini-generate.py --prompt "..." --output graphic.png
 
 # Product image + prompt
-python tools/gemini-generate.py --image product.png --prompt "..." --output graphic.png
+python <image-generation>/scripts/gemini-generate.py --image product.png --prompt "..." --output graphic.png
 
 # Multiple reference images (product + logo + style reference), up to 14
-python tools/gemini-generate.py --image product.png --image logo.png --prompt "..." --output graphic.png
+python <image-generation>/scripts/gemini-generate.py --image product.png --image logo.png --prompt "..." --output graphic.png
 
 # Aspect ratio and resolution
-python tools/gemini-generate.py --prompt "..." --aspect-ratio 4:5 --size 2K --output feed.png
+python <image-generation>/scripts/gemini-generate.py --prompt "..." --aspect-ratio 4:5 --size 2K --output feed.png
 
 # Exact pixel size: generate at the nearest supported ratio, then center-crop + resize
-python tools/gemini-generate.py --prompt "..." --aspect-ratio 8:1 --resize 728x90 --output leaderboard.png
+python <image-generation>/scripts/gemini-generate.py --prompt "..." --aspect-ratio 8:1 --resize 728x90 --output leaderboard.png
 
 # Long prompts: keep them in a file
-python tools/gemini-generate.py --prompt-file prompt.txt --aspect-ratio 16:9 --output hero.png
+python <image-generation>/scripts/gemini-generate.py --prompt-file prompt.txt --aspect-ratio 16:9 --output hero.png
 
 # Multi-turn (--then is repeatable; outputs default to v1_2.png, v1_3.png ...)
-python tools/gemini-generate.py --prompt "Create a poster..." --output v1.png \
+python <image-generation>/scripts/gemini-generate.py --prompt "Create a poster..." --output v1.png \
     --then "Change to dark mode" --then "Make the date larger"
 ```
 
 The script exits non-zero when no image comes back (refusal, safety block, or the model answered with text only) and prints the model's text — read it, adjust the prompt, and retry.
+
+### Exporting Many Sizes From One Master
+
+```bash
+# Social set, ad set, or named presets; --focus keeps the subject in frame (x,y as 0-1)
+python <image-generation>/scripts/export-sizes.py master.png --group social --out exports/
+python <image-generation>/scripts/export-sizes.py master.png --presets og,youtube-thumbnail --focus 0.5,0.4 --out exports/
+python <image-generation>/scripts/export-sizes.py master.png --size 300x250 --size 728x90 --out ads/
+python <image-generation>/scripts/export-sizes.py --list   # all presets and groups
+```
+
+It warns when a crop keeps under half of the master or has to upscale -- generate extreme ratios (8:1, 1:4) separately with the matching `--aspect-ratio` instead. Read a few exports to confirm nothing important was cropped.
 
 ---
 

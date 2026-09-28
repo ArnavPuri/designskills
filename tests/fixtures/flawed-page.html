@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Flawed page</title>
+<style>
+  body { margin: 0; font-family: sans-serif; background: #ffffff; color: #111111; }
+  .hero { padding: 40px; }
+  .muted { color: #bbbbbb; }
+  .wide { width: 1200px; }
+  .fade { transition: opacity 300ms ease; }
+  .tiny { display: inline-block; width: 16px; height: 16px; }
+  h3 { margin: 13px 0; }
+</style>
+</head>
+<body>
+  <section class="hero">
+    <h1>Headline</h1>
+    <h3>Skipped a level</h3>
+    <p class="muted fade">Low contrast text</p>
+    <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" width="200" height="100" loading="lazy">
+    <input type="text" placeholder="Email">
+    <a class="tiny" href="#">x</a>
+    <div class="wide">Overflowing row</div>
+  </section>
+</body>
+</html>

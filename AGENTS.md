@@ -12,6 +12,10 @@ Always check `design-context` first — it establishes brand identity, color sys
 
 The `image-generation` skill provides the Gemini 3.1 Flash Image Preview pipeline that all graphic design skills use for AI image generation.
 
+## Bundled Scripts
+
+Some skills ship helper scripts in their `scripts/` folder. `<skill-name>/scripts/file` in a skill means that skill's directory, which is the base directory shown when the skill loads. Run the scripts from the user's project so outputs land there.
+
 ## Skill Categories
 
 - **Foundational:** design-context, image-generation

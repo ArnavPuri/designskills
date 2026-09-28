@@ -205,38 +205,16 @@ text L 0.57 | bg L 0.97 | diff 0.40 -> ~4.1:1, FAILS AA for normal text
 
 ### Measure, Don't Guess
 
-Browsers render OKLCH directly, but design-context stores hex and contrast must be computed on sRGB. Use this dependency-free script (save to the scratchpad, not the repo) to convert every step to hex and print its contrast:
+Browsers render OKLCH directly, but design-context stores hex and contrast must be computed on sRGB. Use the bundled scripts (`<color-palette>` and `<design-context>` are those skills' directories):
 
-```python
-# palette_check.py -- usage: python palette_check.py <hue> <chroma>   e.g. 250 0.15
-import math, sys
-def _lin(L, C, H):
-    a, b = C*math.cos(math.radians(H)), C*math.sin(math.radians(H))
-    l = (L + 0.3963377774*a + 0.2158037573*b)**3
-    m = (L - 0.1055613458*a - 0.0638541728*b)**3
-    s = (L - 0.0894841775*a - 1.2914855480*b)**3
-    return (4.0767416621*l - 3.3077115913*m + 0.2309699292*s,
-           -1.2684380046*l + 2.6097574011*m - 0.3413193965*s,
-           -0.0041960863*l - 0.7034186147*m + 1.7076147010*s)
-def oklch_to_hex(L, C, H):
-    while C > 0 and not all(-1e-4 <= x <= 1+1e-4 for x in _lin(L, C, H)):
-        C -= 0.002  # out of sRGB gamut: reduce chroma, keep L and H
-    enc = lambda x: 12.92*x if x <= 0.0031308 else 1.055*x**(1/2.4) - 0.055
-    return "#" + "".join(f"{round(min(1, max(0, enc(x)))*255):02X}" for x in _lin(L, max(C, 0), H))
-def luminance(hx):  # WCAG 2.x relative luminance
-    c = [int(hx[i:i+2], 16)/255 for i in (1, 3, 5)]
-    c = [x/12.92 if x <= 0.04045 else ((x+0.055)/1.055)**2.4 for x in c]
-    return 0.2126*c[0] + 0.7152*c[1] + 0.0722*c[2]
-def contrast(a, b):
-    hi, lo = sorted((luminance(a), luminance(b)), reverse=True)
-    return (hi + 0.05) / (lo + 0.05)
-H, C = float(sys.argv[1]), float(sys.argv[2])
-stops = {50:(.97,.3), 100:(.93,.4), 200:(.87,.5), 300:(.78,.7), 400:(.68,.85), 500:(.55,1),
-         600:(.48,1), 700:(.40,1), 800:(.32,.9), 900:(.24,.8), 950:(.16,.7)}
-for k, (L, f) in stops.items():
-    hx = oklch_to_hex(L, C*f, H)
-    print(f"{k:>4} {hx}  on white {contrast(hx,'#FFFFFF'):5.2f}  on black {contrast(hx,'#000000'):5.2f}")
+```bash
+python <color-palette>/scripts/palette.py --from "#2563eb"                 # scale around a brand color
+python <color-palette>/scripts/palette.py 250 0.15 --name brand --css      # hue + chroma -> CSS vars
+python <color-palette>/scripts/palette.py 250 0.02 --name gray --json      # neutrals as JSON
+python <design-context>/scripts/contrast.py "#ffffff" "#2563eb"             # any real pairing
 ```
+
+`palette.py` prints each step's hex and contrast on white/black, marked `AA` (4.5:1), `large/UI` (3:1) or `-`. Out-of-gamut steps lose chroma, never lightness or hue. `contrast.py` exits 1 on a failure and suggests the nearest passing shade.
 
 Also check every real text/background pairing you ship (text on `--bg-*`, button label on `--interactive-*`, dark-mode pairs), not just against pure white/black.
 
@@ -449,7 +427,7 @@ Show the user a before/after diff of the changed rows and ask before saving.
 3. Generate 50-950 scale using the lightness map in Step 2.
 4. Generate neutrals tinted with brand hue (Step 4).
 5. Pick semantic hues (Step 3).
-6. Measure contrast with the script (Step 5) -- fix failures before continuing.
+6. Measure contrast with `palette.py` / `contrast.py` (Step 5) -- fix failures before continuing.
 7. Build dark mode remap (Step 6).
 8. Export as CSS custom properties or Tailwind config.
 9. Render and inspect a swatch sheet; offer to save hex values to design-context (Step 11).

@@ -89,13 +89,13 @@ Exclude: [no borders, no clip art, no extra text]
 Gemini only outputs `1:1, 2:3, 3:2, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9, 21:9, 1:4, 4:1, 1:8, 8:1` -- never put pixel sizes in the prompt and expect them honored. For any other target (1200x628, 300x250, A4), generate at the nearest ratio and let `--resize` center-crop + resize:
 
 ```bash
-python tools/gemini-generate.py --prompt-file prompt.txt --aspect-ratio 16:9 --size 2K \
+python <image-generation>/scripts/gemini-generate.py --prompt-file prompt.txt --aspect-ratio 16:9 --size 2K \
   --resize 1200x628 --output graphic.png
 ```
 
 - Tell Gemini to keep text and key subjects inside the area that survives the crop ("keep all text within the central 80%")
 - `--size 2K` for screen, `4K` for print or large placements
-- Several sizes from one master: generate once without `--resize`, then per size (Pillow): `from PIL import Image, ImageOps; ImageOps.fit(Image.open("master.png"), (w, h), Image.LANCZOS).save(out)`
+- Several sizes from one master: generate once without `--resize`, then `python <image-generation>/scripts/export-sizes.py master.png --group social --out exports/` (presets for social, ads, video; `--focus x,y` keeps the subject in frame)
 
 ### Verify, Then Refine
 
@@ -112,10 +112,10 @@ Never deliver an image you haven't looked at:
 </div>
 ```
 ```bash
-chromium --headless --hide-scrollbars --window-size=1200,628 --screenshot=final.png overlay.html
+node <graphic-design>/scripts/render.mjs overlay.html --size 1200x628 --out final.png   # add --scale 2 for retina
 ```
 
-Then Read `final.png` to confirm.
+`<graphic-design>` is this skill's directory. The script waits for web fonts, outputs exactly the requested size, and exits 3 with a warning if content overflows the canvas (clipped text). Then Read `final.png` to confirm.
 
 ---
 

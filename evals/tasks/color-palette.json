@@ -1,0 +1,13 @@
+{
+  "id": "color-palette",
+  "skill": "color-palette",
+  "prompt": "Build an accessible color palette for our brand starting from #0F766E (teal), with neutrals and semantic colors, and save it into our design context.",
+  "seed": {".agents/design-context.md": "evals/fixtures/design-context.md"},
+  "budget_usd": 3,
+  "checks": [
+    {"type": "skill_loaded", "skill": "color-palette", "required": true},
+    {"type": "file_contains", "glob": ".agents/design-context.md", "pattern": "#0F766E", "flags": "i", "required": true, "label": "palette written back to design context"},
+    {"type": "file_contains", "glob": ".agents/design-context.md", "pattern": "Ember Coffee", "label": "kept unrelated context fields"},
+    {"type": "command", "run": "python {skills}/design-context/scripts/contrast.py --context .agents/design-context.md", "label": "saved palette passes contrast checks"}
+  ]
+}

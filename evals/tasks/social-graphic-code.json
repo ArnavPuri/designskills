@@ -1,0 +1,21 @@
+{
+  "id": "social-graphic-code",
+  "skill": "social-media-graphic",
+  "prompt": "There's no Gemini API key available, so build it in code: create an Instagram portrait feed post (1080x1350) announcing our new 'Ethiopia Guji' single-origin roast, as post.html, and export it to post.png at exactly 1080x1350.",
+  "seed": {".agents/design-context.md": "evals/fixtures/design-context.md"},
+  "budget_usd": 3,
+  "include_skills": ["graphic-design"],
+  "checks": [
+    {"type": "skill_loaded", "skill": "social-media-graphic", "required": true},
+    {"type": "image_size", "glob": "post.png", "width": 1080, "height": 1350, "required": true},
+    {"type": "brand_colors", "glob": "post.html", "min": 2},
+    {"type": "file_contains", "glob": "post.html", "pattern": "Ethiopia Guji", "label": "headline copy present"}
+  ],
+  "rubric": [
+    "The announcement is readable at feed-thumbnail size (about 320px wide)",
+    "Clear hierarchy: product name first, then supporting detail, then a small call to action",
+    "Text stays out of the edges and nothing is clipped",
+    "On-brand warm palette and serif display type"
+  ],
+  "screenshots": ["post.png"]
+}

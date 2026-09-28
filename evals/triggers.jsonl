@@ -1,0 +1,60 @@
+{"prompt": "Before we design anything, let's lock down our brand colors and fonts so every future design uses them.", "expected": ["design-context"]}
+{"prompt": "Here's our Tailwind config — pull our brand settings out of it and save them so the other design tasks stay on-brand.", "expected": ["design-context"]}
+{"prompt": "Generate an image of a ceramic coffee mug on a marble counter in soft morning light.", "expected": ["image-generation"]}
+{"prompt": "Use Gemini to edit this photo so the background is a clean studio gray.", "expected": ["image-generation", "image-treatment"]}
+{"prompt": "Design a one-off graphic announcing our new office opening in Austin.", "expected": ["graphic-design"]}
+{"prompt": "I have a product photo of our water bottle. Turn it into an eye-catching promotional graphic.", "expected": ["graphic-design", "product-mockup"]}
+{"prompt": "Make an Instagram carousel cover and a matching story for our summer sale.", "expected": ["social-media-graphic"]}
+{"prompt": "I need a LinkedIn post image announcing we just raised our Series A.", "expected": ["social-media-graphic"]}
+{"prompt": "Create an A2 poster for a jazz night at the Blue Room on March 14, printable with bleed.", "expected": ["poster-design"]}
+{"prompt": "Design a flyer for our neighborhood bake sale I can print and pin on noticeboards.", "expected": ["poster-design"]}
+{"prompt": "Make a YouTube thumbnail for my video 'I Tried Every Budget Keyboard'.", "expected": ["thumbnail-design"]}
+{"prompt": "Design cover art for my podcast, it needs to read well tiny in Apple Podcasts.", "expected": ["thumbnail-design"]}
+{"prompt": "We need a set of Google Display ads in 300x250, 728x90 and 160x600 for our CRM free trial.", "expected": ["ad-creative-design"]}
+{"prompt": "Write and design three Meta ad variants to A/B test for our meal-kit subscription.", "expected": ["ad-creative-design"]}
+{"prompt": "Put screenshots of our app into iPhone and MacBook frames for the website.", "expected": ["product-mockup"]}
+{"prompt": "Show what our tea tin packaging would look like on a shelf, photoreal.", "expected": ["product-mockup"]}
+{"prompt": "Turn these survey results into an infographic we can share: 62% remote, 25% hybrid, 13% office.", "expected": ["infographic"]}
+{"prompt": "Make a step-by-step visual explaining how our onboarding process works, five steps.", "expected": ["infographic"]}
+{"prompt": "Create a header banner for our email newsletter and a matching website announcement bar.", "expected": ["banner-design", "email-design"]}
+{"prompt": "Design a Twitter/X header image and a LinkedIn company page banner for our brand.", "expected": ["banner-design", "social-media-graphic"]}
+{"prompt": "Build a settings page with a form for profile details, notification toggles, and a save button.", "expected": ["ui-design"]}
+{"prompt": "Design a consistent set of buttons, inputs, and modals for the admin app.", "expected": ["ui-design", "design-system"]}
+{"prompt": "Build a high-converting landing page for our AI note-taking app with pricing and testimonials.", "expected": ["landing-page-design"]}
+{"prompt": "Our marketing site converts poorly. Redesign the whole homepage flow from hero to footer CTA.", "expected": ["landing-page-design"]}
+{"prompt": "Create an analytics dashboard showing MRR, churn, active users, and a revenue chart.", "expected": ["dashboard-design"]}
+{"prompt": "Design an admin panel with KPI cards, a filterable data table, and a sidebar nav.", "expected": ["dashboard-design"]}
+{"prompt": "Design the onboarding screens for our iOS fitness app.", "expected": ["mobile-ui-design"]}
+{"prompt": "Make the checkout flow work well on phones — thumb reach, bottom sheet for payment options.", "expected": ["mobile-ui-design"]}
+{"prompt": "Just redo the hero section at the top of our homepage — headline, subhead, CTA, and an image.", "expected": ["hero-section"]}
+{"prompt": "Build an above-the-fold section with a video background and a signup CTA.", "expected": ["hero-section"]}
+{"prompt": "Design product cards for our shop grid: image, name, price, rating, add-to-cart.", "expected": ["card-design"]}
+{"prompt": "Create pricing cards for three plans with the middle one highlighted.", "expected": ["card-design", "landing-page-design"]}
+{"prompt": "Add a dark theme to our app with a toggle that respects the system setting.", "expected": ["dark-mode"]}
+{"prompt": "Our dark mode looks muddy and the text is hard to read. Fix the colors.", "expected": ["dark-mode"]}
+{"prompt": "Build a welcome email template that renders correctly in Outlook and Gmail.", "expected": ["email-design"]}
+{"prompt": "Design an HTML newsletter for our monthly product update.", "expected": ["email-design"]}
+{"prompt": "Generate a color palette for a calm meditation app starting from a sage green.", "expected": ["color-palette"]}
+{"prompt": "Check whether our brand colors pass WCAG contrast and give me accessible shades.", "expected": ["color-palette", "design-context"]}
+{"prompt": "Pick a font pairing and type scale for an editorial blog.", "expected": ["typography"]}
+{"prompt": "Our headings and body text feel off — fix the line heights, sizes, and hierarchy.", "expected": ["typography"]}
+{"prompt": "Lay out this page on a 12-column grid with better spacing and alignment.", "expected": ["layout-composition"]}
+{"prompt": "The sections feel cramped and unbalanced. Improve the composition and whitespace.", "expected": ["layout-composition", "design-critique"]}
+{"prompt": "Create a logo and visual identity for a specialty coffee roaster called Ember.", "expected": ["brand-identity"]}
+{"prompt": "Write brand guidelines covering logo usage, clear space, colors, and voice.", "expected": ["brand-identity"]}
+{"prompt": "Design a set of 12 line icons for our navigation in a consistent style.", "expected": ["icon-design"]}
+{"prompt": "Make an SVG icon for 'export to PDF' that matches our other outlined icons.", "expected": ["icon-design"]}
+{"prompt": "Set up design tokens and a component library our React team can build on.", "expected": ["design-system"]}
+{"prompt": "Convert our scattered CSS colors and spacing values into a proper token system with docs.", "expected": ["design-system"]}
+{"prompt": "Review this landing page design and tell me what to fix, in priority order.", "expected": ["design-critique"]}
+{"prompt": "Here's a screenshot of our signup page. Is it any good? Be brutally honest.", "expected": ["design-critique"]}
+{"prompt": "Add subtle entrance animations and hover micro-interactions to the pricing page.", "expected": ["motion-design"]}
+{"prompt": "Make the page transitions feel smoother and respect reduced-motion preferences.", "expected": ["motion-design"]}
+{"prompt": "Build a 10-slide pitch deck in HTML for our seed round.", "expected": ["presentation-design"]}
+{"prompt": "Design slides for my conference talk on web performance.", "expected": ["presentation-design"]}
+{"prompt": "Apply a duotone treatment in our brand colors to the team photos on the about page.", "expected": ["image-treatment"]}
+{"prompt": "Optimize the images on our site with responsive srcset and modern formats.", "expected": ["image-treatment"]}
+{"prompt": "Fix the off-by-one error in this pagination function.", "expected": []}
+{"prompt": "Write a SQL query that returns the top 10 customers by revenue last quarter.", "expected": []}
+{"prompt": "Summarize the key points of this meeting transcript.", "expected": []}
+{"prompt": "Set up a GitHub Actions workflow that runs our Python tests.", "expected": []}

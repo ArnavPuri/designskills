@@ -32,58 +32,23 @@ Systematically evaluate existing designs and provide specific, actionable improv
 | Figma frame | Figma MCP `get_screenshot` (plus `get_variable_defs` for tokens) if connected; otherwise ask for an export |
 | React/Vue component | Render it in the project's dev server or Storybook, then treat as a URL |
 
-**Capture script** (save to the scratchpad; needs `playwright` with Chromium installed, and optionally `npm i axe-core` for offline accessibility checks):
+**Capture script** -- bundled at `<design-critique>/scripts/audit.mjs` (`<design-critique>` is this skill's directory). Needs Playwright with Chromium; `npm i -D axe-core` enables offline accessibility checks (otherwise it loads axe from a CDN):
 
-```js
-// critique-capture.js -- usage: node critique-capture.js <url-or-html-file> [outdir]
-const { chromium } = require('playwright');
-const path = require('path');
-const target = process.argv[2], out = process.argv[3] || '.';
-const url = /^https?:/.test(target) ? target : 'file://' + path.resolve(target);
-(async () => {
-  const browser = await chromium.launch();
-  const report = {};
-  for (const [name, width, height] of [['mobile', 375, 812], ['tablet', 768, 1024], ['desktop', 1440, 900]]) {
-    const page = await browser.newPage({ viewport: { width, height } });
-    await page.goto(url, { waitUntil: 'networkidle' });
-    await page.screenshot({ path: `${out}/${name}-fold.png` });              // first impression
-    await page.screenshot({ path: `${out}/${name}-full.png`, fullPage: true });
-    report[name] = await page.evaluate(() => {
-      const els = [...document.querySelectorAll('body, body *')].filter(e => e.getClientRects().length);
-      const count = (f) => els.reduce((m, e) => { const v = f(e); if (v) m[v] = (m[v] || 0) + 1; return m; }, {});
-      const hasText = (e) => [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim());
-      const cs = (e) => getComputedStyle(e);
-      return {
-        horizontalOverflow: document.documentElement.scrollWidth > innerWidth,
-        fontSizes: count(e => hasText(e) && cs(e).fontSize),
-        fontFamilies: count(e => hasText(e) && cs(e).fontFamily.split(',')[0]),
-        textColors: count(e => hasText(e) && cs(e).color),
-        offGridSpacing: count(e => { const v = ['marginTop','marginBottom','paddingTop','paddingLeft','rowGap','columnGap']
-          .map(p => parseFloat(cs(e)[p])).find(v => v > 2 && v % 4); return v && v + 'px'; }),
-        smallTargets: [...document.querySelectorAll('a, button, input, select, textarea, [role=button]')]
-          .map(e => [e, e.getBoundingClientRect()]).filter(([, r]) => r.width && (r.width < 24 || r.height < 24))
-          .slice(0, 10).map(([e, r]) => `${e.tagName.toLowerCase()} "${(e.innerText || e.getAttribute('aria-label') || '').trim().slice(0, 30)}" ${Math.round(r.width)}x${Math.round(r.height)}`),
-      };
-    });
-    if (name === 'desktop') {
-      await page.emulateMedia({ colorScheme: 'dark' });
-      await page.screenshot({ path: `${out}/desktop-dark-fold.png` });
-      await page.emulateMedia({ colorScheme: 'light' });
-      try {
-        let src; try { src = require('axe-core').source; } catch {}           // npm i axe-core (preferred)
-        await page.addScriptTag(src ? { content: src } : { url: 'https://cdn.jsdelivr.net/npm/axe-core@4/axe.min.js' });
-        report.axe = await page.evaluate(async () => (await axe.run()).violations.map(v =>
-          ({ id: v.id, impact: v.impact, help: v.help, count: v.nodes.length, first: v.nodes[0].target.join(' ') })));
-      } catch (e) { report.axe = 'axe-core unavailable (offline?): ' + e.message; }
-    }
-    await page.close();
-  }
-  console.log(JSON.stringify(report, null, 1));
-  await browser.close();
-})();
+```bash
+node <design-critique>/scripts/audit.mjs <url-or-html-file> audit/            # 375, 768, 1440 px
+node <design-critique>/scripts/audit.mjs http://localhost:3000 audit/ --widths 390,1280
 ```
 
-Run `node critique-capture.js <url-or-file> <outdir>`. It writes `{mobile,tablet,desktop}-fold.png` (first impression), `*-full.png`, and `desktop-dark-fold.png`, and prints JSON with: axe violations, font sizes/families/text colors in use (for consistency), off-4px-grid spacing, tap targets under 24px, and horizontal overflow per width.
+It writes `{mobile,tablet,desktop}-fold.png` (first impression), `*-full.png`, `desktop-dark-fold.png`, and `report.json` (also printed), containing:
+
+| Section | What it measures |
+|---------|------------------|
+| `widths.<name>` | Horizontal overflow, font sizes / families / text colors in use (consistency), off-4px-grid spacing, tap targets under 24px, text failing WCAG contrast against its nearest solid background, text sitting on images (check those by eye) |
+| `darkMode` | Contrast failures with `prefers-color-scheme: dark` |
+| `structure` | `lang`, viewport meta, h1 count, skipped heading levels, images without `alt`, unlabeled form controls, lazy-loaded images in the first viewport (LCP risk), animation with no `prefers-reduced-motion` rule |
+| `axe` | axe-core violations: rule id, impact, count, first selector |
+
+Treat the numbers as evidence, not verdicts: a contrast "failure" on a disabled control or decorative text may be fine; say so explicitly.
 
 **Procedure** (same order every time, so critiques are comparable):
 1. Look at `desktop-fold.png` for 5 seconds' worth: write down what you noticed first, second, third, and what the page is asking you to do. That is your hierarchy evidence.

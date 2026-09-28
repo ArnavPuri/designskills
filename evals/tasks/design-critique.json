@@ -1,0 +1,17 @@
+{
+  "id": "design-critique",
+  "skill": "design-critique",
+  "prompt": "Critique flawed-page.html and give me a prioritized list of fixes. Don't change the file.",
+  "seed": {"flawed-page.html": "tests/fixtures/flawed-page.html"},
+  "budget_usd": 3,
+  "checks": [
+    {"type": "skill_loaded", "skill": "design-critique", "required": true},
+    {"type": "response_contains", "pattern": "contrast", "flags": "i", "label": "flags low-contrast text"},
+    {"type": "response_contains", "pattern": "\\balt\\b", "flags": "i", "label": "flags missing alt text"},
+    {"type": "response_contains", "pattern": "label", "flags": "i", "label": "flags unlabeled input"},
+    {"type": "response_contains", "pattern": "overflow|horizontal scroll", "flags": "i", "label": "flags horizontal overflow"},
+    {"type": "response_contains", "pattern": "lang", "flags": "i", "label": "flags missing lang"},
+    {"type": "response_contains", "pattern": "critical|high|severity|priority", "flags": "i", "label": "prioritizes findings"},
+    {"type": "file_unchanged", "glob": "flawed-page.html", "label": "did not edit the file"}
+  ]
+}

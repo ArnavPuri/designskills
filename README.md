@@ -67,11 +67,15 @@ Skills that make AI agents produce professional-grade graphic design, UI design,
 
 ## Installation
 
-### Prerequisites (for AI image generation)
+### Prerequisites
 
 ```bash
+# AI image generation
 pip install google-genai Pillow
 export GEMINI_API_KEY="your-api-key"
+
+# Rendering, screenshots, and design audits (HTML -> PNG, critique capture)
+npm i -D playwright && npx playwright install chromium
 ```
 
 ### Using npx (recommended)
@@ -125,6 +129,23 @@ The agent will:
 4. Deliver a polished, on-brand graphic
 
 The `design-context` skill stores brand parameters that all other skills reference, ensuring consistency across every asset you generate.
+
+## Helper Scripts
+
+Skills bundle the scripts they use in `skills/<name>/scripts/`, so they come along with `npx skills add`:
+
+| Script | What it does |
+|--------|-------------|
+| `image-generation/scripts/gemini-generate.py` | Gemini text-to-image and editing: reference images, aspect ratio, resolution, exact-pixel `--resize`, multi-turn `--then` |
+| `image-generation/scripts/export-sizes.py` | One master image to every platform size (social, ads, video presets) with focal-point cropping |
+| `graphic-design/scripts/render.mjs` | HTML to exact-size PNG/PDF; waits for fonts, warns on clipped content |
+| `design-critique/scripts/audit.mjs` | Screenshots at 3 widths plus dark mode, and measurements: contrast, overflow, tap targets, alt text, headings, axe-core |
+| `design-context/scripts/contrast.py` | WCAG contrast for any pair or a whole design context, with the nearest passing shade |
+| `color-palette/scripts/palette.py` | 11-step OKLCH scales from a hue or a brand hex, as a table, CSS variables, or JSON |
+
+## Evals
+
+`evals/` measures whether the skills work: static consistency checks, a skill-routing eval (does each request load the right skill?), and end-to-end task evals that run headless Claude Code and grade the output with rendered audits and an optional rubric judge. See [evals/README.md](evals/README.md).
 
 ## Glittr Integration
 

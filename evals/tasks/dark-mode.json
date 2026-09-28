@@ -1,0 +1,24 @@
+{
+  "id": "dark-mode",
+  "skill": "dark-mode",
+  "prompt": "Add dark mode to page.html. It should follow the system setting by default, have an accessible toggle that remembers the user's choice, and avoid a flash of the wrong theme on load. Edit page.html in place.",
+  "seed": {
+    ".agents/design-context.md": "evals/fixtures/design-context.md",
+    "page.html": "evals/fixtures/plain-page.html"
+  },
+  "budget_usd": 3,
+  "checks": [
+    {"type": "skill_loaded", "skill": "dark-mode", "required": true},
+    {"type": "file_contains", "glob": "page.html", "pattern": "prefers-color-scheme", "required": true},
+    {"type": "file_contains", "glob": "page.html", "pattern": "color-scheme\\s*:", "label": "sets the color-scheme property"},
+    {"type": "file_contains", "glob": "page.html", "pattern": "localStorage", "label": "remembers the choice"},
+    {"type": "file_contains", "glob": "page.html", "pattern": "aria-pressed|aria-checked|role=\"switch\"|aria-label", "label": "toggle has accessible state or name"},
+    {"type": "file_not_contains", "glob": "page.html", "pattern": "background(-color)?\\s*:\\s*#000(000)?\\b", "label": "no pure black background"},
+    {"type": "audit", "glob": "page.html", "max_contrast_failures": 0, "max_dark_contrast_failures": 0, "no_overflow": true}
+  ],
+  "rubric": [
+    "Dark theme uses elevated, slightly lighter surfaces for cards rather than a flat single color",
+    "Brand orange is adapted (not glaring) in dark mode and text stays comfortably readable",
+    "The toggle is easy to find and its current state is visually clear"
+  ]
+}

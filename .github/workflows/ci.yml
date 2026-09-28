@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: |
+          pip install google-genai Pillow
+          npm install --no-save playwright axe-core
+          npx playwright install --with-deps chromium
+
+      - name: Validate skills
+        run: bash validate-skills.sh
+
+      - name: Static checks
+        run: python evals/static_checks.py
+
+      - name: Script tests
+        run: python -m unittest discover tests -v

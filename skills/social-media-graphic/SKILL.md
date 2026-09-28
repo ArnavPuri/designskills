@@ -393,7 +393,8 @@ When using code instead of Gemini, generate a self-contained HTML file. Include:
 Include a comment in the output:
 ```html
 <!-- To export as an image (body margin must be 0):
-     chromium --headless --hide-scrollbars --window-size=1080,1080 --screenshot=post.png post.html
+     node <graphic-design>/scripts/render.mjs post.html --size 1080x1080 --out post.png
+     (without the graphic-design skill: chromium --headless --hide-scrollbars --window-size=1080,1080 --screenshot=post.png post.html)
      Or DevTools > Cmd+Shift+P > "Capture node screenshot" -->
 ```
 

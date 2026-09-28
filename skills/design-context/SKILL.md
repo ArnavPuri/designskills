@@ -4,7 +4,7 @@ description: >
   Foundational design context skill. Establishes brand identity, color system, typography,
   design style, and audience preferences, saved to .agents/design-context.md for every other
   design skill to reuse. Trigger phrases: "set up design context", "define brand style",
-  "brand guidelines", "style guide setup", "initialize design", "set brand colors",
+  "style guide setup", "initialize design", "set brand colors",
   "use our brand". To build a full token system and components use design-system; to
   generate a palette use color-palette; to create a logo and identity use brand-identity.
 license: MIT
@@ -260,7 +260,14 @@ Check the palette before writing it, and tell the user about any failures (don't
 - Neutral 500 placeholder/muted text on white: >= 4.5:1 if it carries meaning
 - Borders and focus rings (Neutral 200 is decorative only; focus rings need >= 3:1 against their background)
 
-Relative luminance: `L = 0.2126 R + 0.7152 G + 0.0722 B` on linearized sRGB channels; ratio = `(L1 + 0.05) / (L2 + 0.05)`. Compute it with a short script rather than estimating by eye.
+Run the bundled checker rather than estimating by eye (`<design-context>` is this skill's directory):
+
+```bash
+python <design-context>/scripts/contrast.py --context .agents/design-context.md   # all pairings above
+python <design-context>/scripts/contrast.py "#737373" "#ffffff"                     # any single pair
+```
+
+It exits 1 on any failure and suggests the nearest passing shade for each one (same hue and chroma, adjusted lightness). Other skills can use it the same way for any foreground/background pair.
 
 Add a `Last updated: YYYY-MM-DD` line and the detection source (e.g. "from tailwind.config.ts") at the top of the file so later sessions know how fresh it is.
 

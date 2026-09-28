@@ -1,0 +1,23 @@
+{
+  "id": "email-design",
+  "skill": "email-design",
+  "prompt": "Create a welcome email for new Ember Coffee subscribers as welcome-email.html: logo text header, short welcome message, a 'Choose your first roast' button, three tips for brewing, and a footer with unsubscribe link and address. It must render correctly in Outlook desktop and Gmail.",
+  "seed": {".agents/design-context.md": "evals/fixtures/design-context.md"},
+  "budget_usd": 3,
+  "checks": [
+    {"type": "skill_loaded", "skill": "email-design", "required": true},
+    {"type": "file_exists", "glob": "welcome-email.html", "required": true},
+    {"type": "file_contains", "glob": "welcome-email.html", "pattern": "<table[^>]*role=[\"']presentation", "label": "layout tables marked role=presentation"},
+    {"type": "file_not_contains", "glob": "welcome-email.html", "pattern": "display\\s*:\\s*(flex|grid)", "label": "no flexbox/grid (Outlook)"},
+    {"type": "file_contains", "glob": "welcome-email.html", "pattern": "600", "label": "600px content width"},
+    {"type": "file_contains", "glob": "welcome-email.html", "pattern": "unsubscribe", "flags": "i", "required": true},
+    {"type": "brand_colors", "glob": "welcome-email.html", "min": 2},
+    {"type": "max_file_kb", "glob": "welcome-email.html", "kb": 102, "label": "under Gmail's 102KB clipping limit"},
+    {"type": "audit", "glob": "welcome-email.html", "no_overflow": true, "max_contrast_failures": 0}
+  ],
+  "rubric": [
+    "Reads as a polished branded email, not a web page",
+    "The button is bulletproof-looking (large, high contrast) and is the clear next step",
+    "Stacks cleanly to a single column at 390px"
+  ]
+}

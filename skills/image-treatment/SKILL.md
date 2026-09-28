@@ -18,7 +18,7 @@ Apply stunning visual effects to images using CSS filters, blend modes, masks, a
 
 - Read `.agents/design-context.md` (see `design-context`) for brand colors (duotone and overlay colors should come from the Color System), style archetype, and imagery direction. Colors below use the shared `--brand-*` / `--gray-*` scale.
 - Identify the mood and purpose: editorial, product, marketing, artistic.
-- If source images don't exist yet, create them with the `image-generation` skill (`python tools/gemini-generate.py`), then treat them here. For treatments that must be baked into the file (social images, email, OG images), apply them with Pillow instead of CSS.
+- If source images don't exist yet, create them with the `image-generation` skill (`python <image-generation>/scripts/gemini-generate.py`), then treat them here. For treatments that must be baked into the file (social images, email, OG images), apply them with Pillow instead of CSS.
 
 ---
 

@@ -267,5 +267,5 @@ Pipeline/CLI: `image-generation`. Prompt craft, cropping, and text-overlay fallb
 - The overall composition draws attention to the product
 - Gemini output was Read and compared against the source product photo (label, logo, shape unchanged)
 - Screenshots in device frames are the real, unaltered UI and are not stretched (match the screen's aspect ratio)
-- Code output rendered to PNG (`chromium --headless --screenshot`) and the PNG Read before delivery
+- Code output rendered to PNG (`node <graphic-design>/scripts/render.mjs mockup.html --size WxH --out mockup.png`) and the PNG Read before delivery
 - Code is self-contained HTML/CSS
