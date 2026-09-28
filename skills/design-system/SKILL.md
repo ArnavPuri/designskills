@@ -1,10 +1,13 @@
 ---
 name: design-system
 description: >
-  Build systematic component libraries with design tokens, theming,
-  and composable patterns. Trigger phrases: "design system", "design tokens",
-  "component library", "theming", "css variables", "spacing scale",
-  "elevation system", "component API", "token hierarchy"
+  Build a coded design system: three-layer design tokens (CSS variables and W3C
+  DTCG JSON), spacing/radius/shadow/motion scales, light/dark/multi-brand theming,
+  and component APIs with states and docs. Use when building or extending a component
+  library or token architecture. Trigger phrases: "design system", "design tokens",
+  "component library", "theming", "css variables", "spacing scale", "elevation system",
+  "component API", "token hierarchy", "tokens.json". Consumes color-palette (colors) and
+  typography (type scale); for capturing brand basics only, use design-context.
 license: MIT
 ---
 
@@ -15,8 +18,10 @@ Build scalable, maintainable design systems with tokens, components, and theming
 ## Prerequisites
 
 Before building a design system, check for existing design context:
-- Read any design-context files for existing tokens, component conventions, or tech stack constraints.
+- Read `.agents/design-context.md` (see `design-context`) for colors, fonts, Base Size, Scale Ratio, Border Radius, Shadow Style, and Spacing System. Primitive tokens must derive from it, not from invented values.
+- Scan the codebase for existing tokens (CSS variables, Tailwind theme, `tokens.json`) and extend them.
 - Identify the framework (React, Vue, Svelte, vanilla) to determine component patterns.
+- Don't re-derive what siblings own: color scales come from `color-palette` (`--brand-*`, `--gray-*`, `--success-*`, `--warning-*`, `--error-*`, `--info-*`), the type scale from `typography` (`--text-xs` … `--text-5xl`).
 
 ---
 
@@ -29,10 +34,10 @@ Tokens are the atomic values of a design system. Structure them in three layers:
 Named by what they ARE. Never used directly in components.
 
 Define all raw values in `:root` using oklch for colors. Include:
-- **Colors**: brand scale (50-900), semantic (red, green), neutrals (gray 50-900)
-- **Spacing**: 4px base unit scale (0, px, 0.5, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24) in rem
-- **Font sizes**: xs (0.75rem) through 4xl (2.25rem)
-- **Radii**: none, sm (0.25rem), md (0.5rem), lg (0.75rem), xl (1rem), 2xl (1.5rem), full (9999px)
+- **Colors**: `--brand-50…950`, `--gray-50…950`, semantic `--success-*`, `--warning-*`, `--error-*`, `--info-*` (from color-palette)
+- **Spacing**: `--space-N` = N × 4px, in rem (0, px, 0.5, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24) -- see Step 6
+- **Font sizes**: `--text-xs` … `--text-5xl` generated from design-context Base Size × Scale Ratio (typography skill). Don't hard-code a separate scale.
+- **Radii**: none, sm (0.25rem), md (0.5rem), lg (0.75rem), xl (1rem), 2xl (1.5rem), full (9999px); set md to the design-context Border Radius
 
 ### Layer 2: Semantic Tokens (Purpose)
 
@@ -41,9 +46,10 @@ Named by what they DO. These are the primary interface for themes.
 Map primitives to purpose in `:root`:
 - **Backgrounds**: `--bg-primary` (gray-50), `--bg-secondary` (white), `--bg-tertiary` (gray-100), `--bg-inverse` (gray-900)
 - **Text**: primary (gray-900), secondary (gray-600), tertiary (gray-400), inverse, brand
-- **Borders**: default (gray-200), strong (gray-300), brand (blue-500)
-- **Interactive**: primary/hover/active (blue scale), secondary/hover (gray scale)
-- **Semantic**: success (green-500), error (red-500)
+- **Borders**: default (gray-200), strong (gray-300), brand (brand-500)
+- **Interactive**: `--interactive-primary` / `-hover` / `-active` (brand-500/600/700), secondary/hover (gray scale)
+- **Brand aliases**: `--color-primary`, `--color-secondary`, `--color-accent` (names design-context auto-detects)
+- **Semantic**: `--color-success` (success-500), `--color-warning` (warning-500), `--color-error` (error-500)
 - **Spacing**: gap-xs through gap-section mapped to space tokens
 - **Radius**: button (md), card (lg), input (md), badge (full), modal (xl)
 
@@ -94,13 +100,44 @@ index.css             /* Imports all */
   --text-primary: var(--gray-50);
   --text-secondary: var(--gray-300);
   --border-default: var(--gray-700);
-  --interactive-primary: var(--blue-400);
+  --interactive-primary: var(--brand-400);
 }
 
-[data-theme="high-contrast"] {
-  --text-primary: black;
-  --bg-primary: white;
-  --border-default: black;
+/* Follow the OS setting instead of (or as well as) a manual theme */
+@media (prefers-contrast: more) {
+  :root { --text-secondary: var(--text-primary); --border-default: var(--gray-900); }
+}
+```
+
+In Windows High Contrast / `forced-colors: active`, custom colors are replaced by system colors: never convey state with background color alone, and keep a transparent `outline` or `border` on buttons so they stay visible.
+
+### Exporting Tokens (W3C DTCG format)
+
+For tools (Style Dictionary, Tokens Studio, Figma variables) also emit `tokens.json` in the Design Tokens Community Group format: every token is an object with `$value` and `$type` (`$type` can be set once on a group), aliases use `{group.token}`, and metadata goes in `$description`. The stable spec (2025.10) uses structured color and dimension values; older tools may expect `"#0F74C5"` / `"16px"` strings -- check what the consuming tool supports.
+
+```json
+{
+  "color": {
+    "$type": "color",
+    "brand": {
+      "500": { "$value": { "colorSpace": "oklch", "components": [0.55, 0.15, 250], "hex": "#0F74C5" } }
+    },
+    "interactive": {
+      "primary": { "$value": "{color.brand.500}", "$description": "Primary buttons, links" }
+    }
+  },
+  "space": {
+    "$type": "dimension",
+    "4": { "$value": { "value": 1, "unit": "rem" } }
+  },
+  "duration": {
+    "$type": "duration",
+    "normal": { "$value": { "value": 200, "unit": "ms" } }
+  },
+  "easing": {
+    "$type": "cubicBezier",
+    "out": { "$value": [0, 0, 0.2, 1] }
+  }
 }
 ```
 
@@ -114,7 +151,7 @@ Use CSS classes for variants. Size variants (`--sm`, `--lg`) override padding an
 
 ### States
 
-Every interactive component needs: `:hover` (adjusted bg), `:active` (darker bg + `scale(0.98)`), `:focus-visible` (2px outline + 2px offset), `:disabled` / `[aria-disabled]` (opacity 0.5, `pointer-events: none`).
+Every interactive component needs: `:hover` (adjusted bg), `:active` (darker bg + `scale(0.98)`), `:focus-visible` (2px outline + 2px offset, 3:1 contrast against the background), `:disabled` / `[aria-disabled="true"]` (reduced opacity, `cursor: not-allowed`; for `aria-disabled` also block the click in JS -- it stays focusable, which is the point).
 
 ### Consistent API Pattern
 
@@ -143,7 +180,7 @@ Use component tokens (`--input-height`, `--input-border`, `--input-radius`, `--i
 
 ### Theme Switching
 
-Set `data-theme` attribute on `<html>`. JS: check `localStorage` first, fall back to `prefers-color-scheme: dark` media query. Listen for OS changes and update if no saved preference.
+Set `data-theme` attribute on `<html>`. JS: check `localStorage` first, fall back to `prefers-color-scheme: dark` media query. Listen for OS changes and update if no saved preference. Run this as a tiny inline `<script>` in `<head>` (before CSS paints) to avoid a flash of the wrong theme, and set `color-scheme: light dark` so form controls and scrollbars match.
 
 ### Multi-Brand Theming
 
@@ -153,7 +190,7 @@ Use `[data-brand="name"]` selectors to remap Layer 2 tokens (interactive colors,
 
 ## Step 6: Spacing Scale
 
-Use a 4px base unit. Every spacing value is a multiple of 4.
+Use a 4px base unit: `--space-N` = N × 4px. Every value is a multiple of 4 except the 2px hairline. If design-context says "8px base grid", keep this scale but restrict layout spacing to even steps (2, 4, 6, 8…). layout-composition uses this same scale.
 
 ### The Scale
 
@@ -187,6 +224,16 @@ Shadows indicate elevation. Build a layered system.
 
 Define 6 levels: `--shadow-xs` through `--shadow-2xl` using multi-layer `oklch(0 0 0 / opacity)` shadows with increasing blur and offset.
 
+```css
+:root {
+  --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.06), 0 1px 3px oklch(0 0 0 / 0.08);
+  --shadow-md: 0 2px 4px oklch(0 0 0 / 0.06), 0 4px 12px oklch(0 0 0 / 0.10);
+  --shadow-lg: 0 4px 8px oklch(0 0 0 / 0.06), 0 12px 32px oklch(0 0 0 / 0.14);
+}
+```
+
+Scale opacities to the design-context **Shadow Style**: none = borders/surface color only, subtle ≈ the values above, medium ≈ 1.5×, dramatic ≈ 2× with larger offsets.
+
 | Level | Shadow    | Used for                            |
 |-------|-----------|-------------------------------------|
 | 0     | none      | Flush with surface (default)        |
@@ -209,7 +256,7 @@ Scale: none (0), sm (4px), md (8px), lg (12px), xl (16px), 2xl (24px), full (999
 
 ## Step 9: Transition and Animation Tokens
 
-Define duration tokens (fast: 100ms, normal: 200ms, slow: 300ms, slower: 500ms) and easing tokens (default, in, out, spring with overshoot). Create composite transition tokens (`--transition-colors`, `--transition-transform`, `--transition-shadow`, `--transition-opacity`) that combine duration + easing. Components compose these: e.g., buttons use `var(--transition-colors), var(--transition-transform)`.
+Define duration tokens (`--duration-fast`: 100ms, `--duration-normal`: 200ms, `--duration-slow`: 300ms, `--duration-slower`: 500ms) and easing tokens (`--ease-out`, `--ease-in`, `--ease-in-out`, `--ease-spring`) -- the same names and values as the motion-design skill. Create composite transition tokens (`--transition-colors`, `--transition-transform`, `--transition-shadow`, `--transition-opacity`) that combine duration + easing. Components compose these: e.g., buttons use `var(--transition-colors), var(--transition-transform)`.
 
 Always include reduced motion support:
 ```css
@@ -218,6 +265,7 @@ Always include reduced motion support:
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 ```
@@ -239,6 +287,14 @@ Each component in the design system should have:
 7. **Code example**: Copy-paste HTML/CSS.
 
 Use a Storybook-style HTML page: each component gets a `<section>` with description, then `.doc-row` containers (flex wrap, gap, tertiary bg) showing all variants, sizes, and states side by side.
+
+---
+
+## Step 11: Verify and Save
+
+1. **Render the docs page** (Step 10) and screenshot it in both themes: `npx playwright screenshot --full-page "file://$PWD/docs.html" light.png` and again with `--color-scheme=dark` (or toggle `data-theme`). View both with Read. Check every variant/size/state renders, focus rings are visible, disabled looks disabled, and no component uses a raw hex instead of a token (`grep -nE '#[0-9a-fA-F]{3,8}\b' components/`).
+2. **Check contrast** of each text/background and button pair in both themes (use the script in the color-palette skill).
+3. **Offer to write back** to `.agents/design-context.md` any primitives that changed (Color System hex, fonts, Base Size, Scale Ratio, Border Radius, Shadow Style, Spacing System), updating only those fields. Show the diff and ask before saving.
 
 ---
 

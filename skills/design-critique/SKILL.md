@@ -1,8 +1,11 @@
 ---
 name: design-critique
 description: >
-  Evaluate and improve existing designs with structured analysis and
-  actionable code fixes. Trigger phrases: "design critique", "review design",
+  Critique an existing design (web page, HTML/React UI, screenshot, generated image,
+  or Figma frame) with a repeatable procedure: capture it (Playwright screenshots or
+  Read for images), run automated checks (axe, style inventory), score against a
+  weighted rubric, and output severity-ranked fixes with code, then re-verify.
+  Use after any design is produced or when asked to review one. Trigger phrases: "design critique", "review design",
   "improve design", "design audit", "design feedback", "evaluate UI",
   "design score", "accessibility audit", "visual review", "design assessment"
 license: MIT
@@ -14,9 +17,81 @@ Systematically evaluate existing designs and provide specific, actionable improv
 
 ## Prerequisites
 
-Before critiquing, check for existing design context:
-- Read any design-context files for brand guidelines, design system tokens, or stated goals.
-- Understand the project's purpose, audience, and constraints before making recommendations.
+- Read `.agents/design-context.md` (see `design-context`) for brand colors, fonts, style archetype, audience, and tone. "On-brand" is judged against this file, not taste. If it doesn't exist, say the Consistency/Aesthetics scores are judged without brand context.
+- Understand the project's purpose, audience, and the one action the design should drive.
+- Never critique from source code alone. Look at the rendered result first (Step 0).
+
+---
+
+## Step 0: Capture the Artifact (Always First)
+
+| Artifact | How to look at it |
+|----------|-------------------|
+| HTML file / local dev server / URL | Run the capture script below, then Read every PNG it writes |
+| PNG/JPG/WebP (screenshot, generated image, poster) | Read the file. For small details, crop/zoom with Pillow (`Image.open(p).crop(box).resize(...)`) and Read the crop |
+| Figma frame | Figma MCP `get_screenshot` (plus `get_variable_defs` for tokens) if connected; otherwise ask for an export |
+| React/Vue component | Render it in the project's dev server or Storybook, then treat as a URL |
+
+**Capture script** (save to the scratchpad; needs `playwright` with Chromium installed, and optionally `npm i axe-core` for offline accessibility checks):
+
+```js
+// critique-capture.js -- usage: node critique-capture.js <url-or-html-file> [outdir]
+const { chromium } = require('playwright');
+const path = require('path');
+const target = process.argv[2], out = process.argv[3] || '.';
+const url = /^https?:/.test(target) ? target : 'file://' + path.resolve(target);
+(async () => {
+  const browser = await chromium.launch();
+  const report = {};
+  for (const [name, width, height] of [['mobile', 375, 812], ['tablet', 768, 1024], ['desktop', 1440, 900]]) {
+    const page = await browser.newPage({ viewport: { width, height } });
+    await page.goto(url, { waitUntil: 'networkidle' });
+    await page.screenshot({ path: `${out}/${name}-fold.png` });              // first impression
+    await page.screenshot({ path: `${out}/${name}-full.png`, fullPage: true });
+    report[name] = await page.evaluate(() => {
+      const els = [...document.querySelectorAll('body, body *')].filter(e => e.getClientRects().length);
+      const count = (f) => els.reduce((m, e) => { const v = f(e); if (v) m[v] = (m[v] || 0) + 1; return m; }, {});
+      const hasText = (e) => [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim());
+      const cs = (e) => getComputedStyle(e);
+      return {
+        horizontalOverflow: document.documentElement.scrollWidth > innerWidth,
+        fontSizes: count(e => hasText(e) && cs(e).fontSize),
+        fontFamilies: count(e => hasText(e) && cs(e).fontFamily.split(',')[0]),
+        textColors: count(e => hasText(e) && cs(e).color),
+        offGridSpacing: count(e => { const v = ['marginTop','marginBottom','paddingTop','paddingLeft','rowGap','columnGap']
+          .map(p => parseFloat(cs(e)[p])).find(v => v > 2 && v % 4); return v && v + 'px'; }),
+        smallTargets: [...document.querySelectorAll('a, button, input, select, textarea, [role=button]')]
+          .map(e => [e, e.getBoundingClientRect()]).filter(([, r]) => r.width && (r.width < 24 || r.height < 24))
+          .slice(0, 10).map(([e, r]) => `${e.tagName.toLowerCase()} "${(e.innerText || e.getAttribute('aria-label') || '').trim().slice(0, 30)}" ${Math.round(r.width)}x${Math.round(r.height)}`),
+      };
+    });
+    if (name === 'desktop') {
+      await page.emulateMedia({ colorScheme: 'dark' });
+      await page.screenshot({ path: `${out}/desktop-dark-fold.png` });
+      await page.emulateMedia({ colorScheme: 'light' });
+      try {
+        let src; try { src = require('axe-core').source; } catch {}           // npm i axe-core (preferred)
+        await page.addScriptTag(src ? { content: src } : { url: 'https://cdn.jsdelivr.net/npm/axe-core@4/axe.min.js' });
+        report.axe = await page.evaluate(async () => (await axe.run()).violations.map(v =>
+          ({ id: v.id, impact: v.impact, help: v.help, count: v.nodes.length, first: v.nodes[0].target.join(' ') })));
+      } catch (e) { report.axe = 'axe-core unavailable (offline?): ' + e.message; }
+    }
+    await page.close();
+  }
+  console.log(JSON.stringify(report, null, 1));
+  await browser.close();
+})();
+```
+
+Run `node critique-capture.js <url-or-file> <outdir>`. It writes `{mobile,tablet,desktop}-fold.png` (first impression), `*-full.png`, and `desktop-dark-fold.png`, and prints JSON with: axe violations, font sizes/families/text colors in use (for consistency), off-4px-grid spacing, tap targets under 24px, and horizontal overflow per width.
+
+**Procedure** (same order every time, so critiques are comparable):
+1. Look at `desktop-fold.png` for 5 seconds' worth: write down what you noticed first, second, third, and what the page is asking you to do. That is your hierarchy evidence.
+2. Walk Steps 1-7 using the screenshots plus the JSON. Every finding must cite evidence: a screenshot region, a measured value, or an axe rule id.
+3. Assign severity (Step 8), score (Step 10), and write the report.
+4. After fixes are applied, re-run the capture and compare before/after screenshots (Step 9).
+
+For static images (posters, ads, social graphics, generated images) there is no DOM: skip keyboard/performance checks, estimate contrast by sampling pixel colors with Pillow (`im.getpixel((x, y))`) and the WCAG formula, and also judge the image at its real display size (e.g. downscale a thumbnail to 320px wide and Read it). To fix a generated image, give concrete edit instructions for the `image-generation` skill rather than CSS.
 
 ---
 
@@ -60,7 +135,7 @@ Evaluate how effectively the design guides the user's eye.
 - [ ] **Palette cohesion**: Are all colors from the same family/system or do some feel random?
 - [ ] **Meaningful color**: Does each color serve a purpose (brand, semantic, decorative)?
 - [ ] **Color count**: Are there too many colors? (Aim for 1-2 brand + 4 semantic + neutrals.)
-- [ ] **Contrast ratios**: Does all text meet WCAG AA (4.5:1 for normal, 3:1 for large)?
+- [ ] **Contrast ratios**: Does all text meet WCAG AA (4.5:1 normal; 3:1 for ≥24px or ≥18.66px bold)? Use axe's `color-contrast` results; for text over images/gradients, measure the worst spot in the screenshot.
 - [ ] **Consistent semantic colors**: Is red always error? Green always success?
 - [ ] **Dark mode**: If present, are colors adapted (not just inverted)?
 - [ ] **Color-only information**: Is any information conveyed by color alone? (It should not be.)
@@ -73,7 +148,7 @@ Evaluate how effectively the design guides the user's eye.
 .muted-text { color: #aaa; } /* ~2.3:1 on white -- FAILS AA */
 
 /* Fix: darken until AA passes */
-.muted-text { color: #737373; } /* ~4.6:1 on white -- passes AA */
+.muted-text { color: #737373; } /* 4.74:1 on white -- passes AA (design-context Neutral 500) */
 
 /* Problem: Link indistinguishable from text */
 /* Fix: underline + color */
@@ -92,7 +167,8 @@ a { color: var(--brand-500); text-decoration: underline; text-underline-offset: 
 - [ ] **Line height**: Is body text 1.5-1.75? Are headings 1.1-1.3?
 - [ ] **Line length**: Is body text constrained to 45-75 characters per line?
 - [ ] **Consistency**: Same element types use same styles throughout?
-- [ ] **Text wrap**: Are headings using `text-wrap: balance`?
+- [ ] **Text wrap**: Are headings using `text-wrap: balance` (no single-word last lines)?
+- [ ] **Scale evidence**: The capture JSON `fontSizes` should show roughly 5-8 distinct sizes; 12+ means no scale.
 - [ ] **Responsive**: Does text scale appropriately on mobile?
 
 ### Common Fixes
@@ -106,14 +182,12 @@ a { color: var(--brand-500); text-decoration: underline; text-underline-offset: 
 .content { max-width: 1400px; }
 .content .prose { max-width: 65ch; }
 
-/* Problem: Arbitrary font sizes */
-/* Fix: implement a scale */
+/* Problem: Arbitrary font sizes -- Fix: adopt the typography skill's modular scale */
 :root {
-  --scale: 1.25;
-  --text-sm: calc(1rem / var(--scale));
+  --type-ratio: 1.25; /* design-context Scale Ratio */
   --text-base: 1rem;
-  --text-lg: calc(1rem * var(--scale));
-  --text-xl: calc(1rem * var(--scale) * var(--scale));
+  --text-lg: calc(var(--text-base) * var(--type-ratio));
+  --text-xl: calc(var(--text-lg) * var(--type-ratio)); /* ...see typography Step 1 */
 }
 ```
 
@@ -158,8 +232,8 @@ a { color: var(--brand-500); text-decoration: underline; text-underline-offset: 
 
 ### Contrast
 
-- [ ] Normal text (< 18px): 4.5:1 minimum contrast ratio.
-- [ ] Large text (18px+ bold, 24px+): 3:1 minimum.
+- [ ] Normal text: 4.5:1 minimum contrast ratio.
+- [ ] Large text (≥24px, or ≥18.66px bold): 3:1 minimum.
 - [ ] UI components (borders, icons): 3:1 against adjacent colors.
 - [ ] Focus indicators: 3:1 against adjacent background.
 
@@ -220,7 +294,7 @@ a { color: var(--brand-500); text-decoration: underline; text-underline-offset: 
 ### Checklist
 
 - [ ] **Mobile layout**: Does the layout stack sensibly on small screens?
-- [ ] **Touch targets**: Are all interactive elements at least 44x44px on mobile?
+- [ ] **Touch targets**: At least 24x24px (WCAG 2.2 AA, SC 2.5.8; see `smallTargets` in the JSON); 44x44px recommended on mobile.
 - [ ] **Text readability**: Is body text at least 16px on mobile (no zoom needed)?
 - [ ] **Horizontal scroll**: Is there any horizontal overflow?
 - [ ] **Images**: Do images resize appropriately (max-width: 100%)?
@@ -241,12 +315,12 @@ a { color: var(--brand-500); text-decoration: underline; text-underline-offset: 
 /* Before */
 .icon-button { width: 24px; height: 24px; }
 
-/* Fix: larger touch target */
+/* Fix: larger hit area, same visual icon (works with box-sizing: border-box) */
 .icon-button {
-  width: 24px;
-  height: 24px;
-  padding: 10px;    /* Increases touch target to 44px */
-  margin: -10px;    /* Prevents layout shift */
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-grid;
+  place-items: center;
 }
 
 /* Problem: Images overflow container */
@@ -263,7 +337,7 @@ img {
 ### Checklist
 
 - [ ] **Font loading**: Using `font-display: swap`? Preloading critical fonts?
-- [ ] **Image formats**: Using WebP/AVIF with fallbacks?
+- [ ] **Image formats**: Using AVIF/WebP with fallbacks, and `srcset` + `sizes` so phones don't download desktop images?
 - [ ] **Image sizing**: Are images sized appropriately (not 4000px for a 400px display)?
 - [ ] **Animation performance**: Animations using only `transform` and `opacity`?
 - [ ] **CSS efficiency**: Any redundant or overriding styles?
@@ -281,140 +355,58 @@ img {
 .card:hover { transform: translateY(-5px); }  /* GPU composited */
 
 /* Problem: Layout shift from images */
-/* Fix: reserve space */
-img {
-  aspect-ratio: 16 / 9;
-  width: 100%;
-  object-fit: cover;
-}
+/* Fix: put the intrinsic size in HTML (<img width="1600" height="900">), then: */
+img { max-width: 100%; height: auto; }
 ```
 
 ---
 
-## Step 8: Specific Improvement Recommendations
+## Step 8: Severity and Recommendation Format
 
-When providing feedback, always follow this structure:
+### Severity Levels (assign exactly one per issue)
+
+| Severity | Criteria | Examples |
+|----------|----------|----------|
+| **Critical** | Blocks a user from completing the core task, or fails WCAG A/AA on core content | Body text 2.3:1, CTA invisible on mobile, keyboard trap, horizontal scroll on mobile, missing labels on form fields |
+| **High** | Core task works but is noticeably harder, or the design undermines its main goal | No clear primary CTA, competing focal points, off-brand colors/fonts, tap targets < 24px |
+| **Medium** | Visible polish/consistency problem most users feel but can work around | 10+ font sizes, off-grid spacing, inconsistent radii, weak secondary hierarchy |
+| **Low** | Refinement a designer would notice | Heading widows, slightly loose letter-spacing, minor alignment drift |
+
+Order the fix list by severity, then by impact ÷ effort within a severity.
 
 ### Recommendation Format
 
 ```
-### Issue: [What's wrong]
-**Severity**: High / Medium / Low
+### [Severity] Issue: [What's wrong]
 **Category**: Hierarchy | Color | Typography | Spacing | Accessibility | Responsive | Performance
-
-**Problem**: [1-2 sentences describing what's wrong and why it matters]
-
-**Fix**:
-[Specific CSS/HTML code to resolve it]
-
-**Impact**: [What improves -- readability, usability, aesthetics, performance]
+**Evidence**: [screenshot + region, measured value, or axe rule id]
+**Problem**: [1-2 sentences: what's wrong and why it matters]
+**Fix**: [Specific CSS/HTML using the project's tokens]
+**Impact**: [What improves]
 ```
 
 ### Example
 
 ```
-### Issue: Hero section lacks visual hierarchy
-**Severity**: High
+### [High] Issue: Hero headline, subtitle, and CTA compete for attention
 **Category**: Hierarchy
-
-**Problem**: The hero headline, subheadline, and CTA button are all similar
-in visual weight. Users cannot quickly identify the primary message or action.
-
-**Fix**:
-```
-
-```css
-.hero-headline {
-  font-size: clamp(2.5rem, 5vw + 1rem, 5rem);
-  font-weight: 800;
-  line-height: 1.05;
-  letter-spacing: -0.03em;
-  color: var(--gray-900);
-  margin-bottom: var(--space-4);
-}
-
-.hero-subtitle {
-  font-size: var(--text-xl);
-  color: var(--gray-500);   /* Receded from headline */
-  max-width: 50ch;
-  margin-bottom: var(--space-8);
-}
-
-.hero-cta {
-  font-size: var(--text-lg);
-  padding: var(--space-3) var(--space-8);
-  background: var(--brand-500);
-  color: white;
-  font-weight: 600;
-}
-```
-
-```
-**Impact**: Users immediately see the headline, understand the value proposition
-from the subtitle, and have a clear next action.
+**Evidence**: desktop-fold.png -- headline 28px/600, subtitle 24px/600, CTA is a gray outline button
+**Problem**: Nothing reads first, and the only action looks secondary.
+**Fix**: .hero-headline { font-size: clamp(2.5rem, 5vw + 1rem, 5rem); font-weight: 800; }
+         .hero-subtitle { font-size: var(--text-xl); color: var(--text-secondary); max-width: 50ch; }
+         .hero-cta { background: var(--interactive-primary); color: white; }
+**Impact**: Headline -> value prop -> CTA reads in order within 3 seconds.
 ```
 
 ---
 
-## Step 9: Before/After Comparison Approach
+## Step 9: Before/After Verification
 
-When suggesting changes, provide both states for comparison.
+A critique is not done until the fixes are checked on the rendered page.
 
-### Structure
-
-1. Identify the specific element or section.
-2. Show the current CSS (before).
-3. Show the improved CSS (after).
-4. Explain what changed and why.
-
-```css
-/* BEFORE: Flat, low contrast card */
-.card {
-  padding: 20px;
-  border: 1px solid #eee;
-  background: white;
-}
-
-.card h3 {
-  font-size: 18px;
-  margin-bottom: 8px;
-}
-
-.card p {
-  font-size: 14px;
-  color: #666;
-}
-
-/* AFTER: Elevated, clear hierarchy */
-.card {
-  padding: var(--space-6);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  background: var(--bg-secondary);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-}
-
-.card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-}
-
-.card h3 {
-  font-size: var(--text-xl);
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: var(--space-2);
-}
-
-.card p {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  line-height: 1.6;
-}
-
-/* Changes: added border-radius, hover elevation, better spacing tokens,
-   stronger heading weight, improved line-height for readability */
-```
+1. For each fix, show the current CSS (before) and the improved CSS (after), and say what changed and why. Use existing tokens (`--space-*`, `--text-*`, `--bg-*`, `--text-primary`, `--interactive-primary`, `--radius-*`, `--shadow-*`); never introduce new hard-coded values.
+2. If you applied the fixes, re-run the capture script into a new folder and Read the before and after screenshots of the same viewport side by side.
+3. Confirm every Critical/High issue is resolved (axe violations gone, overflow false, targets ≥ 24px) and nothing regressed at the other widths or in dark mode. Re-score only after this check.
 
 ---
 
@@ -424,12 +416,14 @@ Rate the design across these dimensions (1-10 scale):
 
 ### Categories
 
-| Category       | Weight | What to evaluate                                  |
+| Category       | Weight | What to evaluate (checklist steps)                 |
 |----------------|--------|---------------------------------------------------|
-| **Hierarchy**  | 25%    | Clear focal points, scannable, directed flow       |
-| **Consistency**| 25%    | Spacing scale, color system, type system, patterns |
-| **Aesthetics** | 25%    | Color harmony, whitespace, polish, modern feel     |
-| **Usability**  | 25%    | Accessibility, responsiveness, clarity, performance|
+| **Hierarchy**  | 25%    | Clear focal points, scannable, directed flow (Step 1, 5-second test) |
+| **Consistency**| 25%    | Spacing scale, color system, type system, brand match (Steps 2-4, capture JSON) |
+| **Aesthetics** | 25%    | Color harmony, whitespace, polish, fit to style archetype |
+| **Usability**  | 25%    | Accessibility, responsiveness, clarity, performance (Steps 5-7, axe) |
+
+Overall = weighted average, rounded to one decimal. **Caps** keep scores honest: any open Critical issue caps its category at 4 and the overall at 6; any open High issue caps its category at 7. Aesthetics must cite at least one concrete observation, not just "looks modern."
 
 ### Scoring Rubric
 
@@ -460,10 +454,12 @@ Rate the design across these dimensions (1-10 scale):
 2. [What's working well]
 3. [What's working well]
 
-### Top 3 Improvements (with code)
-1. [Highest impact fix -- include CSS]
-2. [Second highest impact fix -- include CSS]
-3. [Third highest impact fix -- include CSS]
+### Issues by Severity
+| # | Severity | Category | Issue | Evidence |
+|---|----------|----------|-------|----------|
+| 1 | Critical | ...      | ...   | ...      |
+
+### Fixes (in priority order, with code -- Step 8 format)
 
 ### Quick Wins (< 5 min each)
 - [Small change, big impact]
@@ -474,6 +470,7 @@ Rate the design across these dimensions (1-10 scale):
 
 ## Critique Process Summary
 
+0. **Capture** the artifact (Step 0) and look at the screenshots before reading code.
 1. **Read design context** and understand goals.
 2. **Assess visual hierarchy**: Is there a clear 1-2-3 priority?
 3. **Evaluate colors**: Cohesive? Accessible? Purposeful?
@@ -483,4 +480,5 @@ Rate the design across these dimensions (1-10 scale):
 7. **Test responsive**: Mobile stacking, touch targets, overflow?
 8. **Check performance**: Animations efficient? Images sized? Fonts loaded?
 9. **Provide specific fixes**: Always include code, never just describe.
-10. **Score and prioritize**: Give an overall score and rank recommendations by impact.
+10. **Score and prioritize**: Assign severity, apply caps, rank fixes.
+11. **Re-verify**: Re-capture after fixes and confirm Critical/High issues are gone (Step 9).

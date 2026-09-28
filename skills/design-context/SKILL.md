@@ -2,9 +2,11 @@
 name: design-context
 description: >
   Foundational design context skill. Establishes brand identity, color system, typography,
-  design style, and audience preferences. Trigger phrases: "set up design context",
-  "define brand style", "configure design system", "brand guidelines", "design tokens",
-  "style guide setup", "initialize design", "set brand colors".
+  design style, and audience preferences, saved to .agents/design-context.md for every other
+  design skill to reuse. Trigger phrases: "set up design context", "define brand style",
+  "brand guidelines", "style guide setup", "initialize design", "set brand colors",
+  "use our brand". To build a full token system and components use design-system; to
+  generate a palette use color-palette; to create a logo and identity use brand-identity.
 license: MIT
 ---
 
@@ -109,7 +111,7 @@ Gather a minimum of 4 color groups. Store as hex codes.
 
 #### Type Scale Reference
 
-Use this scale system (base 16px, ratio 1.25):
+Default scale (Tailwind's hand-tuned sizes, base 16px -- roughly, not exactly, a 1.25 ratio). If the user wants a true modular scale, compute it with the `typography` skill instead:
 ```
 xs:   12px / 0.75rem
 sm:   14px / 0.875rem

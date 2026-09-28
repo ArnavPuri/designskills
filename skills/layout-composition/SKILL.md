@@ -1,8 +1,10 @@
 ---
 name: layout-composition
 description: >
-  Grid systems, visual hierarchy, and modern layout patterns for web design.
-  Trigger phrases: "layout", "grid", "bento grid", "visual hierarchy",
+  Grid systems, visual hierarchy, whitespace, and modern CSS layout patterns
+  (grid, flexbox, bento, container queries) for web pages and UI. Use when arranging
+  content on a page or screen. For spacing/radius tokens themselves use design-system;
+  for slide layouts use presentation-design. Trigger phrases: "layout", "grid", "bento grid", "visual hierarchy",
   "page layout", "flexbox layout", "whitespace", "responsive layout",
   "composition", "css grid", "container queries"
 license: MIT
@@ -14,7 +16,7 @@ Build structured, visually compelling layouts using modern CSS.
 
 ## Prerequisites
 
-- Read any design-context files for layout preferences, breakpoints, or grid constraints.
+- Read `.agents/design-context.md` (see `design-context`) for Spacing System (4px/8px base), Border Radius, style archetype, and platform priority. Spacing tokens below follow the design-system scale (`--space-N` = N × 4px); colors use the shared `--brand-*` / `--gray-*` primitives from color-palette.
 - Identify the content types (text-heavy, media-heavy, dashboard, marketing) to choose the right patterns.
 
 ---
@@ -50,7 +52,7 @@ Build structured, visually compelling layouts using modern CSS.
   grid-template-areas: "header header header" "sidebar main aside" "footer footer footer";
 }
 .header { grid-area: header; } .sidebar { grid-area: sidebar; }
-.main { grid-area: main; } .footer { grid-area: footer; }
+.main { grid-area: main; } .aside { grid-area: aside; } .footer { grid-area: footer; }
 @media (max-width: 1024px) {
   .page-layout { grid-template-columns: 1fr; grid-template-areas: "header" "main" "sidebar" "aside" "footer"; }
 }
@@ -73,8 +75,8 @@ Build structured, visually compelling layouts using modern CSS.
 
 ### Card Row with Equal Heights
 ```css
-.card-row { display: flex; gap: 1.5rem; }
-.card-row > * { flex: 1; display: flex; flex-direction: column; }
+.card-row { display: flex; flex-wrap: wrap; gap: 1.5rem; }
+.card-row > * { flex: 1 1 260px; display: flex; flex-direction: column; } /* wraps instead of squashing on mobile */
 .card-row .card-footer { margin-top: auto; }
 ```
 
@@ -122,11 +124,13 @@ Build structured, visually compelling layouts using modern CSS.
 
 ### Spacing Scale
 
+Same scale as the design-system skill: `--space-N` = N × 4px. Do not redefine it if the project already has one.
+
 ```css
 :root {
   --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem;
-  --space-5: 1.5rem; --space-6: 2rem; --space-8: 3rem; --space-10: 4rem;
-  --space-12: 6rem; --space-16: 8rem;
+  --space-5: 1.25rem; --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem;
+  --space-12: 3rem; --space-16: 4rem; --space-20: 5rem; --space-24: 6rem;
 }
 section { padding-block: clamp(4rem, 8vw, 8rem); }
 .hero { padding-block: clamp(6rem, 12vw, 12rem); }
@@ -154,8 +158,8 @@ Ranked by impact (strongest to weakest):
 ### Section Header Pattern
 
 ```css
-.section-header { max-width: 600px; margin-inline: auto; text-align: center; margin-bottom: var(--space-10); }
-.section-label { font-size: var(--text-sm); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--brand-500); margin-bottom: var(--space-3); }
+.section-header { max-width: 600px; margin-inline: auto; text-align: center; margin-bottom: var(--space-16); }
+.section-label { font-size: var(--text-sm); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--brand-600); margin-bottom: var(--space-3); } /* 600: small text needs 4.5:1 */
 .section-title { font-size: var(--text-4xl); font-weight: 800; line-height: 1.1; color: var(--gray-900); margin-bottom: var(--space-4); }
 .section-description { font-size: var(--text-lg); color: var(--gray-500); line-height: 1.6; }
 ```
@@ -192,6 +196,8 @@ Place focal points at 1/3 intersections, not dead center. Slightly off-center pl
 ```css
 .offset-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
 .offset-grid > :nth-child(3n+2) { transform: translateY(3rem); }
+.offset-grid { padding-bottom: 3rem; } /* transform doesn't reserve space */
+@media (max-width: 768px) { .offset-grid { grid-template-columns: 1fr; } .offset-grid > * { transform: none; } }
 ```
 
 ---
@@ -247,3 +253,17 @@ Place focal points at 1/3 intersections, not dead center. Slightly off-center pl
 | Portfolio             | Masonry or offset grid             |
 | Documentation         | Sidebar nav + centered content     |
 | E-commerce product    | 2-col asymmetric (image + details) |
+
+---
+
+## Verify the Layout
+
+Never ship a layout you haven't looked at. Render the page and screenshot it at three widths, then view each image with Read:
+
+```bash
+for w in 375 768 1440; do
+  npx playwright screenshot --full-page --viewport-size=$w,900 "file://$PWD/index.html" layout-$w.png
+done
+```
+
+Check each screenshot for: one clear focal point per section, consistent left edges and gutters, no horizontal overflow (in the browser: `document.documentElement.scrollWidth > innerWidth` must be false), sensible stacking order on mobile (DOM order = reading order; don't reorder visually with `order`/grid placement in a way that breaks keyboard tab order), and no orphaned single card on the last grid row. Fix and re-screenshot until clean.

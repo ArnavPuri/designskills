@@ -1,10 +1,13 @@
 ---
 name: typography
 description: >
-  Master typography for web: type scales, font pairing, responsive text,
-  and text effects. Trigger phrases: "typography", "font pairing", "type scale",
-  "heading sizes", "responsive text", "font combination", "text style",
-  "variable fonts", "fluid typography", "google fonts"
+  Typography for web and UI: modular type scales, font pairing, heading hierarchy,
+  readable body text, fluid clamp() sizing, variable fonts, font loading, and text
+  effects. Use when the task is about fonts or text styling. Trigger phrases:
+  "typography", "font pairing", "type scale", "heading sizes", "responsive text",
+  "font combination", "text style", "variable fonts", "fluid typography", "google fonts",
+  "line height", "font loading". For a full token system (spacing, color, components)
+  use design-system, which consumes the scale defined here.
 license: MIT
 ---
 
@@ -15,8 +18,9 @@ Create beautiful, readable, and systematic typography for any web project.
 ## Prerequisites
 
 Before setting typography, check for existing design context:
-- Read any design-context files for existing font choices, brand guidelines, or type preferences.
-- If a design system exists, align with its type scale and font stack.
+- Read `.agents/design-context.md` (see `design-context`): Heading/Body/Mono Font, Base Size, Scale Ratio, Heading/Body Weight. Use them unless the user is explicitly changing them.
+- If a design system exists in the codebase, align with its type scale and font stack.
+- Note: the design-context "Type Scale Reference" (12/14/16/18/20/24/30/36/48/60/72) is Tailwind's hand-tuned scale, not a strict 1.25 progression. If the project already uses it, keep it; for new work, generate a true modular scale from the saved Scale Ratio (Step 1) and say which one you used.
 
 ---
 
@@ -24,8 +28,8 @@ Before setting typography, check for existing design context:
 
 The type scale ratio determines the mathematical relationship between sizes. Pick based on the content density and visual character of the project.
 
-| Ratio | Name            | Value | Best for                           |
-|-------|-----------------|-------|------------------------------------|
+| Ratio           | Nickname | Value | Best for                           |
+|-----------------|----------|-------|------------------------------------|
 | Minor second    | Tight   | 1.067 | Dense data UIs, dashboards         |
 | Major second    | Compact | 1.125 | Apps, tools, compact layouts       |
 | Minor third     | Default | 1.200 | General web, blogs, marketing      |
@@ -42,17 +46,20 @@ The type scale ratio determines the mathematical relationship between sizes. Pic
   --type-ratio: 1.25;   /* major third */
   --type-base: 1rem;    /* 16px */
 
-  --text-xs:   calc(var(--type-base) / var(--type-ratio) / var(--type-ratio)); /* ~0.64rem */
-  --text-sm:   calc(var(--type-base) / var(--type-ratio));  /* ~0.80rem */
-  --text-base: var(--type-base);                             /* 1rem */
-  --text-lg:   calc(var(--type-base) * var(--type-ratio));   /* 1.25rem */
-  --text-xl:   calc(var(--type-base) * var(--type-ratio) * var(--type-ratio));  /* 1.563rem */
-  --text-2xl:  calc(var(--type-base) * var(--type-ratio) * var(--type-ratio) * var(--type-ratio));  /* 1.953rem */
-  --text-3xl:  calc(1rem * 2.441);  /* precomputed for clarity */
-  --text-4xl:  calc(1rem * 3.052);
-  --text-5xl:  calc(1rem * 3.815);
+  /* Each step = previous * ratio, so changing --type-ratio updates the whole scale */
+  --text-xs:   max(0.75rem, calc(var(--text-sm) / var(--type-ratio))); /* 0.64rem = 10.24px -> floored to 12px */
+  --text-sm:   calc(var(--type-base) / var(--type-ratio));  /* 0.8rem   = 12.8px */
+  --text-base: var(--type-base);                             /* 1rem     = 16px   */
+  --text-lg:   calc(var(--text-base) * var(--type-ratio));   /* 1.25rem  = 20px   */
+  --text-xl:   calc(var(--text-lg) * var(--type-ratio));     /* 1.563rem = 25px   */
+  --text-2xl:  calc(var(--text-xl) * var(--type-ratio));     /* 1.953rem = 31.25px */
+  --text-3xl:  calc(var(--text-2xl) * var(--type-ratio));    /* 2.441rem = 39px   */
+  --text-4xl:  calc(var(--text-3xl) * var(--type-ratio));    /* 3.052rem = 48.8px */
+  --text-5xl:  calc(var(--text-4xl) * var(--type-ratio));    /* 3.815rem = 61px   */
 }
 ```
+
+Formula: `size(n) = base × ratio^n`. Comments above are for ratio 1.25; recompute them if you change the ratio. Keep functional text (captions, labels) at 12px or larger.
 
 ---
 
@@ -87,7 +94,7 @@ These are tested, production-ready combinations.
    Warm transitional serif + neutral modern sans. Excellent readability.
 
 3. **Fraunces + Commissioner**
-   Variable serif with personality + geometric sans. Distinctive editorial.
+   Variable "soft" serif with personality + low-contrast humanist sans. Distinctive editorial.
 
 ### Modern / SaaS
 
@@ -98,17 +105,17 @@ These are tested, production-ready combinations.
    Geometric, modern. Slightly more personality than Inter.
 
 6. **Manrope + Source Sans 3**
-   Geometric with rounded terminals + humanist sans. Friendly tech feel.
+   Semi-condensed geometric grotesque + humanist sans. Friendly tech feel.
 
 ### Bold / Marketing
 
-7. **Space Grotesk + General Sans** (self-hosted) or **Space Grotesk + DM Sans**
+7. **Space Grotesk + General Sans** (Fontshare, self-host) or **Space Grotesk + DM Sans**
    Monospace-influenced sans + clean geometric. Techy and bold.
 
 8. **Bricolage Grotesque + Inter**
    Quirky variable sans for headings + reliable body text. Playful but professional.
 
-9. **Cabinet Grotesk** (self-hosted) **+ Satoshi** (self-hosted)
+9. **Cabinet Grotesk + Satoshi** (both Fontshare, self-host -- see Licensing)
    Modern geometric pair. Premium startup aesthetic.
 
 ### Specialized
@@ -117,7 +124,7 @@ These are tested, production-ready combinations.
     Monospace headings/code + sans body. Developer tools, documentation.
 
 11. **Instrument Serif + Instrument Sans**
-    Matched serif/sans superfamily. Seamless pairing guaranteed.
+    Companion serif/sans designed together. Low-risk pairing (Instrument Serif is display-weight only -- headings, not body).
 
 12. **Sora + Newsreader**
     Geometric sans headings + readable serif body. Inverted classic pattern.
@@ -198,7 +205,7 @@ h6 {
 
 - Negative letter-spacing for large headings (-0.01em to -0.03em).
 - Tighter line-height for headings (1.1-1.3) than body text.
-- Skip heading levels sparingly -- h1 to h3 is fine for most pages.
+- Never skip heading levels to get a smaller size (h1 -> h3). Heading levels are document structure for screen readers; decouple looks with classes (`<h2 class="h4">`).
 
 ---
 
@@ -216,8 +223,8 @@ body {
   font-family: var(--font-body);
   font-size: 1.125rem;        /* 18px */
   line-height: 1.65;
-  color: var(--gray-900);
-  -webkit-font-smoothing: antialiased;
+  color: var(--text-primary, var(--gray-900)); /* design-context: Neutral 800 body / 900 headings */
+  -webkit-font-smoothing: antialiased;  /* macOS only; harmless elsewhere */
   text-rendering: optimizeLegibility;
 }
 
@@ -245,10 +252,16 @@ Use `clamp()` for fluid scaling between breakpoints without media queries.
 
 ```
 clamp(min, preferred, max)
-preferred = viewport-relative unit (e.g., 2.5vw + a rem base)
+slope     = (maxSize - minSize) / (maxViewport - minViewport)      e.g. (24 - 20) / (1280 - 360) = 0.004348
+preferred = (slope * 100)vw + (minSize - slope * minViewport)/16 rem
+          = 0.4348vw + 1.152rem   ->  clamp(1.25rem, 0.4348vw + 1.152rem, 1.5rem)
 ```
 
+Always keep a `rem` term in the preferred value: pure `vw` sizes do not grow with browser zoom and fail WCAG 1.4.4 (Resize Text).
+
 ### Practical Fluid Scale
+
+This **replaces** the static scale from Step 1 (use one or the other, not both). Max values approximate a 1.25-1.33 progression at desktop widths; min values stay close to the mobile static scale.
 
 ```css
 :root {
@@ -270,7 +283,7 @@ preferred = viewport-relative unit (e.g., 2.5vw + a rem base)
   font-weight: 800;
   line-height: 1.05;
   letter-spacing: -0.03em;
-  text-wrap: balance; /* prevents orphans */
+  text-wrap: balance; /* evens out line lengths in short headings */
 }
 ```
 
@@ -300,43 +313,16 @@ preferred = viewport-relative unit (e.g., 2.5vw + a rem base)
 }
 ```
 
-### Text Shadow for Depth
+### Text Shadow and Text Over Images
 
 ```css
-.text-shadow-soft {
-  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.text-shadow-hard {
-  text-shadow: 3px 3px 0 rgba(0,0,0,0.15);
-}
-
-/* Neon glow */
-.text-neon {
-  text-shadow:
-    0 0 7px #fff,
-    0 0 10px #fff,
-    0 0 21px #fff,
-    0 0 42px #0fa,
-    0 0 82px #0fa;
-}
+.text-shadow-soft { text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.text-shadow-hard { text-shadow: 3px 3px 0 rgba(0,0,0,0.15); }
+.text-over-image  { text-shadow: 0 2px 16px rgba(0,0,0,0.5); } /* or a backdrop: */
+.text-backdrop    { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); padding: 0.5em 1em; border-radius: 0.25em; }
 ```
 
-### Text Over Images
-
-```css
-.text-over-image {
-  text-shadow: 0 2px 16px rgba(0,0,0,0.5);
-  /* OR use a backdrop */
-}
-
-.text-backdrop {
-  background: rgba(0,0,0,0.5);
-  backdrop-filter: blur(4px);
-  padding: 0.5em 1em;
-  border-radius: 0.25em;
-}
-```
+Gradient, outlined, and image-backed text must still meet contrast: measure the lightest part of the gradient/photo behind the text, and keep outlined text to display sizes.
 
 ---
 
@@ -348,9 +334,9 @@ preferred = viewport-relative unit (e.g., 2.5vw + a rem base)
 |-------|-------------------|-----------------|
 | wght  | font-weight       | 100-900         |
 | wdth  | font-stretch      | 75%-125%        |
-| slnt  | font-style        | -12 to 0        |
-| ital  | font-style        | 0 or 1          |
-| opsz  | font-optical-sizing| 8-144          |
+| slnt  | font-style: oblique Xdeg | -12 to 0 (varies) |
+| ital  | font-style: italic | 0 or 1         |
+| opsz  | font-optical-sizing: auto | varies (Inter 14-32) |
 
 ```css
 @font-face {
@@ -363,9 +349,14 @@ preferred = viewport-relative unit (e.g., 2.5vw + a rem base)
 .heading {
   font-family: 'Inter Variable', sans-serif;
   font-weight: 750;           /* precise weight */
-  font-variation-settings: 'wdth' 110;  /* slightly wider */
+  font-optical-sizing: auto;  /* uses Inter's opsz axis automatically */
 }
+
+/* Width only works if the font HAS a wdth axis (e.g. Roboto Flex, Mona Sans; Inter has none) */
+.heading-wide { font-stretch: 110%; }
 ```
+
+Prefer the high-level properties (`font-weight`, `font-stretch`, `font-style`, `font-optical-sizing`) over `font-variation-settings`, which overrides all axes at once and does not inherit per-axis. Check a font's axes on its Google Fonts page before using them.
 
 ---
 
@@ -395,12 +386,14 @@ preferred = viewport-relative unit (e.g., 2.5vw + a rem base)
 
 ### Recommended Approach
 
+Pick ONE: Google Fonts CDN (Option A) or self-hosting (Option B, better for performance and privacy/GDPR).
+
 ```html
-<!-- Preconnect to font CDN -->
+<!-- Option A: Google Fonts CDN -- preconnect, then the stylesheet from Step 3 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-<!-- Preload critical font file -->
+<!-- Option B: self-hosted -- preload only the 1-2 files needed above the fold -->
 <link rel="preload" as="font" type="font/woff2"
       href="/fonts/inter-var.woff2" crossorigin>
 ```
@@ -445,7 +438,17 @@ Use `size-adjust`, `ascent-override`, and `descent-override` to match fallback m
   descent-override: 22%;
   line-gap-override: 0%;
 }
+
+body { font-family: 'Inter', 'Inter Fallback', sans-serif; }
 ```
+
+These override values are for Inter over Arial; for other fonts generate them (e.g. Fontaine, Capsize, or `next/font`, which does it automatically).
+
+### Licensing
+
+- Google Fonts families are open source (almost all SIL OFL 1.1, a few Apache 2.0): free for commercial use, embedding, and self-hosting.
+- Fontshare fonts (Satoshi, General Sans, Cabinet Grotesk) are free for commercial use under the ITF Free Font License, but are not on Google Fonts; download and self-host them.
+- Commercial foundry fonts need a web license (often priced by pageviews). Never self-host a font file pulled from a design tool or OS without confirming the license.
 
 ---
 
@@ -460,4 +463,9 @@ Use `size-adjust`, `ascent-override`, and `descent-override` to match fallback m
 7. Use positive letter-spacing for uppercase text.
 8. Preload critical fonts; use `font-display: swap`.
 9. Set up a system font fallback stack.
-10. Use `text-wrap: balance` on headings to avoid orphans.
+10. Use `text-wrap: balance` on headings and `text-wrap: pretty` on paragraphs to avoid orphans.
+
+## Verify and Save
+
+1. **Render a type specimen**: write an HTML page (scratchpad) showing h1-h6, body paragraph (~3 lines at real width), caption, label, code, and a long unbroken heading, using the actual fonts. Screenshot at 375px and 1280px wide (`npx playwright screenshot --viewport-size=375,800 --full-page "file://$PWD/specimen.html" mobile.png`) and look at both with Read. Check: fonts actually loaded (not fallback), clear step between each level, body line length 45-75 characters, no heading wider than the viewport.
+2. **Offer to write back** to `.agents/design-context.md`: update only the changed Typography fields (Heading Font, Body Font, Mono Font, Base Size, Scale Ratio, Heading Weight, Body Weight) as full font stacks. Show the diff and ask before saving.

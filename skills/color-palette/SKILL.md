@@ -1,10 +1,13 @@
 ---
 name: color-palette
 description: >
-  Generate beautiful, accessible color palettes and color systems.
-  Trigger phrases: "color palette", "brand colors", "color scheme",
-  "generate colors", "dark mode colors", "color tokens", "color system",
-  "accessible colors", "contrast ratio", "semantic colors"
+  Generate accessible color palettes: OKLCH shade scales (50-950), tinted neutrals,
+  semantic colors, WCAG contrast checks, dark-mode color remaps, gradients, and
+  CSS/Tailwind color output. Use when the task is ONLY about color. Trigger phrases:
+  "color palette", "color scheme", "generate colors", "shade scale", "color tokens",
+  "color system", "accessible colors", "contrast ratio", "semantic colors", "palette from hex".
+  For logo + fonts + guidelines use brand-identity; for full token/component systems
+  (spacing, radius, components) use design-system; for complete dark themes use dark-mode.
 license: MIT
 ---
 
@@ -15,14 +18,16 @@ Generate harmonious, accessible, and production-ready color systems from any sta
 ## Prerequisites
 
 Before generating colors, check for existing design context:
-- Read any design-context files in the project for existing brand colors, themes, or constraints.
-- If a design system already exists, extend it rather than replacing it.
+- Read `.agents/design-context.md` (see the `design-context` skill). If it has a Color System, treat those hex values as the source of truth and extend them rather than replacing them.
+- If a design system already exists in the codebase (CSS variables, Tailwind theme, `tokens.json`), extend it rather than replacing it.
+
+**Naming convention (shared with design-system, layout-composition, etc.):** primitive scales are `--brand-50 … --brand-950`, `--gray-50 … --gray-950`, `--success-*`, `--warning-*`, `--error-*`, `--info-*`; semantic tokens are `--bg-*`, `--text-*`, `--border-*`, `--interactive-*`, plus the brand aliases `--color-primary`, `--color-secondary`, `--color-accent`.
 
 ---
 
 ## Step 1: Understand Color Theory Fundamentals
 
-Use the **HSL** or **OKLCH** color model for palette generation. OKLCH is preferred for perceptual uniformity.
+Generate palettes in **OKLCH**. Its lightness channel is perceptually even, so a fixed L step looks like the same visual step at every hue (in HSL, `hsl(60 100% 50%)` yellow is far lighter than `hsl(240 100% 50%)` blue at the "same" lightness). Use HSL only when a legacy tool forces it. Note that high-chroma OKLCH values can fall outside sRGB; reduce chroma (keep L and H) when converting to hex.
 
 ### Color Wheel Relationships
 
@@ -39,18 +44,18 @@ Use the **HSL** or **OKLCH** color model for palette generation. OKLCH is prefer
 ```css
 :root {
   /* Base brand color in oklch */
-  --brand-h: 250;           /* hue angle */
-  --brand-s: 0.15;          /* chroma */
+  --brand-hue: 250;         /* hue angle */
+  --brand-chroma: 0.15;     /* chroma (not HSL saturation) */
   --brand-l: 0.55;          /* lightness */
 
-  --color-primary:       oklch(var(--brand-l) var(--brand-s) var(--brand-h));
-  --color-complement:    oklch(var(--brand-l) var(--brand-s) calc(var(--brand-h) + 180));
-  --color-analogous-1:   oklch(var(--brand-l) var(--brand-s) calc(var(--brand-h) + 30));
-  --color-analogous-2:   oklch(var(--brand-l) var(--brand-s) calc(var(--brand-h) - 30));
-  --color-triadic-1:     oklch(var(--brand-l) var(--brand-s) calc(var(--brand-h) + 120));
-  --color-triadic-2:     oklch(var(--brand-l) var(--brand-s) calc(var(--brand-h) + 240));
-  --color-split-comp-1:  oklch(var(--brand-l) var(--brand-s) calc(var(--brand-h) + 150));
-  --color-split-comp-2:  oklch(var(--brand-l) var(--brand-s) calc(var(--brand-h) + 210));
+  --color-primary:       oklch(var(--brand-l) var(--brand-chroma) var(--brand-hue));
+  --color-complement:    oklch(var(--brand-l) var(--brand-chroma) calc(var(--brand-hue) + 180));
+  --color-analogous-1:   oklch(var(--brand-l) var(--brand-chroma) calc(var(--brand-hue) + 30));
+  --color-analogous-2:   oklch(var(--brand-l) var(--brand-chroma) calc(var(--brand-hue) - 30));
+  --color-triadic-1:     oklch(var(--brand-l) var(--brand-chroma) calc(var(--brand-hue) + 120));
+  --color-triadic-2:     oklch(var(--brand-l) var(--brand-chroma) calc(var(--brand-hue) + 240));
+  --color-split-comp-1:  oklch(var(--brand-l) var(--brand-chroma) calc(var(--brand-hue) + 150));
+  --color-split-comp-2:  oklch(var(--brand-l) var(--brand-chroma) calc(var(--brand-hue) + 210));
 }
 ```
 
@@ -58,7 +63,7 @@ Use the **HSL** or **OKLCH** color model for palette generation. OKLCH is prefer
 
 ## Step 2: Generate a Full Shade Scale (50-950)
 
-From a single brand color, generate a 19-step lightness scale. In OKLCH, vary lightness while keeping hue stable and slightly reducing chroma at extremes.
+From a single brand color, generate an 11-step lightness scale (50, 100-900, 950). In OKLCH, vary lightness while keeping hue stable and slightly reducing chroma at extremes.
 
 ### Lightness Map
 
@@ -116,25 +121,31 @@ Map purpose-driven tokens to your palette or define independent hues.
 :root {
   /* Semantic: success */
   --success-50:  oklch(0.97 0.04 145);
+  --success-400: oklch(0.68 0.15 145);  /* dark-mode foreground */
   --success-500: oklch(0.55 0.16 145);
   --success-700: oklch(0.40 0.14 145);
 
   /* Semantic: warning */
   --warning-50:  oklch(0.97 0.04 85);
-  --warning-500: oklch(0.60 0.16 85);
+  --warning-400: oklch(0.72 0.15 85);
+  --warning-500: oklch(0.60 0.16 85);   /* ~4:1 on white: use dark text ON it, 700 for warning TEXT */
   --warning-700: oklch(0.45 0.14 85);
 
   /* Semantic: error */
   --error-50:  oklch(0.97 0.04 25);
+  --error-400: oklch(0.68 0.16 25);
   --error-500: oklch(0.55 0.18 25);
   --error-700: oklch(0.40 0.16 25);
 
   /* Semantic: info */
   --info-50:  oklch(0.97 0.04 230);
+  --info-400: oklch(0.68 0.12 230);
   --info-500: oklch(0.55 0.14 230);
   --info-700: oklch(0.40 0.12 230);
 }
 ```
+
+Generate the full 50-950 scale for a semantic hue only if the product needs it (alerts, badges, charts); 50/400/500/700 covers most UI.
 
 ---
 
@@ -165,29 +176,69 @@ Neutrals are the backbone. Add a slight hue tint from the brand for warmth.
 
 ## Step 5: Ensure WCAG Accessibility
 
-### Contrast Requirements
+### Contrast Requirements (WCAG 2.2 -- the current legal/industry standard)
 
-| Level    | Normal text | Large text (18px+ bold, 24px+) |
-|----------|-------------|-------------------------------|
-| WCAG AA  | 4.5:1       | 3:1                           |
-| WCAG AAA | 7:1         | 4.5:1                         |
+| Level    | Normal text | Large text (≥24px, or ≥18.66px / 14pt bold) | Non-text UI (icons, borders, focus rings, chart marks) |
+|----------|-------------|---------------------------------------------|--------------------------------------------------------|
+| WCAG AA  | 4.5:1       | 3:1                                         | 3:1 against adjacent colors (SC 1.4.11)               |
+| WCAG AAA | 7:1         | 4.5:1                                       | --                                                     |
+
+Contrast ratio = `(L1 + 0.05) / (L2 + 0.05)`, where L1/L2 are the lighter/darker **relative luminance** (`0.2126 R + 0.7152 G + 0.0722 B` on linearized sRGB). Ratios are not rounded up: 4.49:1 fails. APCA (Lc values) is a draft candidate for WCAG 3 -- useful as a second opinion, especially for dark mode, but never report it as the compliance standard.
 
 ### Practical Rules
 
-- **Body text on light bg**: use 900 or 950 shade (always passes AA).
+- **Body text on light bg**: use 900 or 950 shade (passes AA comfortably with the lightness map above).
 - **Body text on dark bg**: use 50 or 100 shade.
-- **Primary buttons**: white text on 500+ shade; verify 4.5:1 contrast.
+- **Primary buttons**: white text on 500+ shade *usually* passes (L 0.55 blue ≈ 4.9:1), but yellows/ambers/cyans at L 0.55-0.65 often fail -- use dark text on those. Always measure.
 - **Disabled states**: use 400 shade on light bg. Disabled elements are exempt from WCAG but should still be distinguishable.
-- **Links**: must be distinguishable from surrounding text by more than color alone (underline or 3:1 contrast with surrounding text).
+- **Links**: must be distinguishable from surrounding text by more than color alone -- underline them, or give them 3:1 contrast against the surrounding text *plus* a non-color cue on hover/focus.
 
 ### Quick Contrast Check via OKLCH Lightness
 
-A lightness difference of 0.40+ in OKLCH **usually** meets AA for normal text. Always verify with a tool, but this is a fast heuristic.
+For near-neutral colors, relative luminance ≈ L³, so a lightness gap of about **0.42-0.45+** is needed for 4.5:1 at the extremes (and more in the mid-range). Use it only to pick candidates, then measure.
 
 ```
-text lightness: 0.20  |  bg lightness: 0.97  |  diff: 0.77 -> passes AAA
-text lightness: 0.55  |  bg lightness: 0.97  |  diff: 0.42 -> likely passes AA for large text
+text L 0.20 | bg L 0.97 | diff 0.77 -> ~16.6:1, passes AAA
+text L 0.55 | bg L 0.97 | diff 0.42 -> ~4.5:1, borderline AA -- measure; safe for large text
+text L 0.57 | bg L 0.97 | diff 0.40 -> ~4.1:1, FAILS AA for normal text
 ```
+
+### Measure, Don't Guess
+
+Browsers render OKLCH directly, but design-context stores hex and contrast must be computed on sRGB. Use this dependency-free script (save to the scratchpad, not the repo) to convert every step to hex and print its contrast:
+
+```python
+# palette_check.py -- usage: python palette_check.py <hue> <chroma>   e.g. 250 0.15
+import math, sys
+def _lin(L, C, H):
+    a, b = C*math.cos(math.radians(H)), C*math.sin(math.radians(H))
+    l = (L + 0.3963377774*a + 0.2158037573*b)**3
+    m = (L - 0.1055613458*a - 0.0638541728*b)**3
+    s = (L - 0.0894841775*a - 1.2914855480*b)**3
+    return (4.0767416621*l - 3.3077115913*m + 0.2309699292*s,
+           -1.2684380046*l + 2.6097574011*m - 0.3413193965*s,
+           -0.0041960863*l - 0.7034186147*m + 1.7076147010*s)
+def oklch_to_hex(L, C, H):
+    while C > 0 and not all(-1e-4 <= x <= 1+1e-4 for x in _lin(L, C, H)):
+        C -= 0.002  # out of sRGB gamut: reduce chroma, keep L and H
+    enc = lambda x: 12.92*x if x <= 0.0031308 else 1.055*x**(1/2.4) - 0.055
+    return "#" + "".join(f"{round(min(1, max(0, enc(x)))*255):02X}" for x in _lin(L, max(C, 0), H))
+def luminance(hx):  # WCAG 2.x relative luminance
+    c = [int(hx[i:i+2], 16)/255 for i in (1, 3, 5)]
+    c = [x/12.92 if x <= 0.04045 else ((x+0.055)/1.055)**2.4 for x in c]
+    return 0.2126*c[0] + 0.7152*c[1] + 0.0722*c[2]
+def contrast(a, b):
+    hi, lo = sorted((luminance(a), luminance(b)), reverse=True)
+    return (hi + 0.05) / (lo + 0.05)
+H, C = float(sys.argv[1]), float(sys.argv[2])
+stops = {50:(.97,.3), 100:(.93,.4), 200:(.87,.5), 300:(.78,.7), 400:(.68,.85), 500:(.55,1),
+         600:(.48,1), 700:(.40,1), 800:(.32,.9), 900:(.24,.8), 950:(.16,.7)}
+for k, (L, f) in stops.items():
+    hx = oklch_to_hex(L, C*f, H)
+    print(f"{k:>4} {hx}  on white {contrast(hx,'#FFFFFF'):5.2f}  on black {contrast(hx,'#000000'):5.2f}")
+```
+
+Also check every real text/background pairing you ship (text on `--bg-*`, button label on `--interactive-*`, dark-mode pairs), not just against pure white/black.
 
 ---
 
@@ -214,16 +265,19 @@ Do NOT simply invert the scale. Instead, remap semantic usage.
   --surface-hover: var(--gray-800);
 
   /* Borders: use 700 instead of 200 */
-  --border: var(--gray-700);
+  --border-default: var(--gray-700);
 
   /* Brand colors: increase lightness for dark bg */
-  --brand-primary: var(--brand-400); /* lighter than 500 */
+  --interactive-primary: var(--brand-400); /* lighter than 500 */
 
   /* Semantic: bump to lighter shades */
   --color-success: var(--success-400);
+  --color-warning: var(--warning-400);
   --color-error:   var(--error-400);
 }
 ```
+
+These names must match the light-mode Layer 2 tokens in Step 10 -- dark mode only remaps them. For a full dark theme (elevation surfaces, images, toggles) hand off to the `dark-mode` skill.
 
 ### Key Principles
 
@@ -254,14 +308,14 @@ Do NOT simply invert the scale. Instead, remap semantic usage.
 
 1. Stay within 60 degrees of hue rotation for subtle gradients.
 2. Use 90-180 degrees for vibrant, energetic gradients.
-3. Avoid crossing 0/360 boundary in HSL (causes muddy midpoints). OKLCH handles this correctly.
-4. Add a slight chroma boost at midpoint to avoid the "gray dead zone."
+3. Writing stops in `oklch()` does NOT make the gradient interpolate in OKLCH. Without an interpolation hint, browsers use Oklab for modern colors and sRGB for hex/rgb/hsl stops -- both go straight through the color space and can pass through gray between distant hues. Add `in oklch` to interpolate around the hue wheel (add `longer hue` for rainbow sweeps).
+4. Or add a mid stop with a slight chroma boost to avoid the "gray dead zone."
 
 ```css
 /* Subtle brand gradient */
 .gradient-subtle {
   background: linear-gradient(
-    135deg,
+    135deg in oklch,
     oklch(0.55 0.15 250),
     oklch(0.55 0.15 280)
   );
@@ -270,7 +324,7 @@ Do NOT simply invert the scale. Instead, remap semantic usage.
 /* Vibrant hero gradient */
 .gradient-vibrant {
   background: linear-gradient(
-    135deg,
+    135deg in oklch,
     oklch(0.65 0.20 280),
     oklch(0.60 0.22 330),
     oklch(0.65 0.20 20)
@@ -290,6 +344,20 @@ Do NOT simply invert the scale. Instead, remap semantic usage.
 ---
 
 ## Step 9: Tailwind Config Generation
+
+**Tailwind v4** (CSS-first) -- put the scale in `@theme`, which generates `bg-brand-500`, `text-brand-900`, etc.:
+
+```css
+@import "tailwindcss";
+@theme {
+  --color-brand-50:  oklch(0.97 0.045 250);
+  --color-brand-500: oklch(0.55 0.15 250);
+  --color-brand-900: oklch(0.24 0.12 250);
+  /* ...every step 50-950, plus success/warning/error/info */
+}
+```
+
+**Tailwind v3** (`tailwind.config.js`):
 
 ```js
 // tailwind.config.js
@@ -331,22 +399,25 @@ Structure tokens in three layers:
 ```css
 /* Layer 1: Primitive (raw values) */
 :root {
-  --blue-500: oklch(0.55 0.15 250);
-  --red-500:  oklch(0.55 0.18 25);
+  --brand-500: oklch(0.55 0.15 250);
+  --error-500: oklch(0.55 0.18 25);
+  /* ...full --brand-*, --gray-*, semantic scales from Steps 2-4 */
 }
 
-/* Layer 2: Semantic (purpose) */
+/* Layer 2: Semantic (purpose) -- same names design-system uses */
 :root {
-  --color-primary:    var(--blue-500);
-  --color-danger:     var(--red-500);
-  --color-bg:         var(--gray-50);
-  --color-text:       var(--gray-900);
+  --color-primary:       var(--brand-500);
+  --interactive-primary: var(--brand-500);
+  --color-error:         var(--error-500);
+  --bg-primary:          var(--gray-50);
+  --text-primary:        var(--gray-900);
+  --border-default:      var(--gray-200);
 }
 
 /* Layer 3: Component (scoped) */
 .btn-primary {
-  background: var(--color-primary);
-  color: white;
+  background: var(--interactive-primary);
+  color: white; /* verified >= 4.5:1 against brand-500 */
 }
 ```
 
@@ -354,13 +425,31 @@ This three-layer approach makes theming and dark mode trivial -- you only remap 
 
 ---
 
+## Step 11: Verify Visually and Save to Design Context
+
+1. **Render a swatch sheet**: write a small HTML file (scratchpad) showing each scale as a row of swatches labeled with token, hex, and contrast vs white/black, plus sample text/button pairings in light AND dark mode. Screenshot it (e.g. `npx playwright screenshot --full-page "file://$PWD/swatches.html" swatches.png`; add `--color-scheme=dark` for the dark pass) and look at the image with Read. Check that steps look evenly spaced, no step is muddy or neon, and neutrals read as neutral.
+2. **Offer to write back** to `.agents/design-context.md` (the `design-context` skill's file). Update only the Color System rows that changed; never rewrite the whole file. Map the scale to the design-context roles as hex:
+
+| design-context role | Take from |
+|---------------------|-----------|
+| Primary | `--brand-500` (or 600 if 500 fails 4.5:1 with white text) |
+| Primary Light / Primary Dark | `--brand-400` / `--brand-700` |
+| Secondary / Accent | 500 step of the secondary / accent hue |
+| Neutral 50 / 100 / 200 / 500 / 800 / 900 | matching `--gray-*` steps |
+| Success / Warning / Error | `--success-500` / `--warning-500` / `--error-500` |
+
+Show the user a before/after diff of the changed rows and ask before saving.
+
+---
+
 ## Quick Reference: Palette from a Single Hex
 
-1. Convert hex to OKLCH.
+1. Read `.agents/design-context.md`; convert the brand hex to OKLCH.
 2. Extract hue. This is your brand hue.
 3. Generate 50-950 scale using the lightness map in Step 2.
 4. Generate neutrals tinted with brand hue (Step 4).
 5. Pick semantic hues (Step 3).
-6. Verify contrast (Step 5).
+6. Measure contrast with the script (Step 5) -- fix failures before continuing.
 7. Build dark mode remap (Step 6).
 8. Export as CSS custom properties or Tailwind config.
+9. Render and inspect a swatch sheet; offer to save hex values to design-context (Step 11).

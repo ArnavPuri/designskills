@@ -1,10 +1,13 @@
 ---
 name: brand-identity
 description: >
-  Build complete visual identity systems: logos, brand colors, typography,
-  and brand guidelines. Trigger phrases: "brand identity", "logo design",
-  "brand guidelines", "visual identity", "brand system", "favicon",
-  "brand colors", "logo variations", "brand pattern"
+  Build a complete visual identity from scratch or refresh one: logo mark and
+  variations (SVG), brand color roles, brand fonts, patterns, favicons/app icons,
+  social avatars, and a brand guidelines page. Use when the user needs the brand
+  itself, not just one ingredient. Trigger phrases: "brand identity", "logo design",
+  "brand guidelines", "visual identity", "brand system", "favicon", "logo variations",
+  "brand pattern", "rebrand". For only a palette use color-palette; only fonts use
+  typography; UI tokens/components use design-system.
 license: MIT
 ---
 
@@ -15,8 +18,9 @@ Create cohesive visual identity systems that communicate brand values through co
 ## Prerequisites
 
 Before building a brand identity, check for existing design context:
-- Read any design-context files for existing brand assets, color preferences, or style guides.
-- Identify the brand's industry, target audience, and personality traits.
+- Read `.agents/design-context.md` (see `design-context`) for existing brand name, colors, fonts, style archetype, audience, and Brand Marks. Refresh only what the user wants changed.
+- Identify the brand's industry, target audience, and personality traits (3-5 adjectives).
+- Delegate depth: generate the full shade scale with the `color-palette` skill and the type scale with `typography`. Variables below (`--brand-100`, `--brand-500`, ...) are that shared primitive scale.
 
 ---
 
@@ -33,6 +37,8 @@ Before building a brand identity, check for existing design context:
 ### CSS/SVG Logo Techniques
 
 Use simple geometric SVG marks (48x48 viewBox, rounded rect + inner shape). For CSS-only marks: `display: grid; place-items: center` on a colored rounded square, `::after` pseudo-element for the inner shape.
+
+Ship final logos as SVG with text converted to paths (or drawn as shapes) -- never depend on a web font or `<text>` inside a logo file. AI image generation (`image-generation` skill, Gemini) is useful for exploring concept directions and moodboards, but it produces raster images with unreliable lettering; redraw the chosen direction as clean SVG.
 
 ---
 
@@ -75,17 +81,19 @@ A brand color system is more than a palette. Structure it as:
   --color-secondary: oklch(0.60 0.18 330);
   --color-secondary-light: oklch(0.75 0.12 330);
 
-  /* Surfaces */
-  --color-bg: oklch(0.99 0.005 250);
-  --color-surface: oklch(0.97 0.005 250);
-  --color-surface-raised: oklch(1.00 0 0);
+  /* Surfaces (semantic names shared with design-system) */
+  --bg-primary: oklch(0.99 0.005 250);
+  --bg-secondary: oklch(0.97 0.005 250);
+  --bg-raised: oklch(1.00 0 0);
 
   /* Text */
-  --color-text: oklch(0.20 0.02 250);
-  --color-text-muted: oklch(0.50 0.01 250);
-  --color-text-inverse: oklch(0.97 0.005 250);
+  --text-primary: oklch(0.20 0.02 250);
+  --text-secondary: oklch(0.50 0.01 250);  /* ~5.8:1 on bg-primary */
+  --text-inverse: oklch(0.97 0.005 250);
 }
 ```
+
+Convert every final color to hex for the guidelines page and design-context (the color-palette skill has a conversion + contrast script), and verify each text/background pair.
 
 ---
 
@@ -96,7 +104,7 @@ A brand color system is more than a palette. Structure it as:
 | Brand personality | Font style           | Examples                        |
 |-------------------|---------------------|---------------------------------|
 | Traditional       | Serif               | Playfair Display, Lora          |
-| Modern / Clean    | Geometric sans      | Inter, DM Sans, Manrope        |
+| Modern / Clean    | Neo-grotesque / geometric sans | Inter, DM Sans, Manrope |
 | Friendly / Warm   | Rounded sans        | Nunito, Quicksand               |
 | Technical         | Monospace or grotesk| JetBrains Mono, Space Grotesk  |
 | Luxury            | Thin serif/sans     | Cormorant, Outfit               |
@@ -106,7 +114,7 @@ A brand color system is more than a palette. Structure it as:
 
 ```css
 :root {
-  --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-heading: 'Playfair Display', Georgia, 'Times New Roman', serif; /* design-context: Heading Font */
   --font-body: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
 }
@@ -242,9 +250,10 @@ Structure as semantic sections (`<section id="logo">`, `<section id="colors">`, 
 ### SVG Favicon (Best Modern Approach)
 
 ```html
+<link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="alternate icon" href="/favicon.ico">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png"><!-- 180x180, no transparency -->
+<link rel="manifest" href="/site.webmanifest">
 ```
 
 ```svg
@@ -257,11 +266,12 @@ Structure as semantic sections (`<section id="logo">`, `<section id="colors">`, 
     }
   </style>
   <rect width="32" height="32" rx="6"/>
-  <text x="16" y="22" text-anchor="middle"
-        font-family="system-ui" font-weight="bold"
-        font-size="18" fill="white">B</text>
+  <!-- Letterform as a path, not <text>: fonts render differently per OS -->
+  <path d="M11 8h6a4 4 0 0 1 0 8h-6zm0 8h7a4 4 0 0 1 0 8h-7z" fill="none" stroke="white" stroke-width="3" stroke-linejoin="round"/>
 </svg>
 ```
+
+Use the design-context Primary hex (and Primary Light for dark mode) instead of the example colors.
 
 ### Web Manifest
 
@@ -271,7 +281,8 @@ Structure as semantic sections (`<section id="logo">`, `<section id="colors">`, 
   "short_name": "Brand",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "theme_color": "#4f46e5",
   "background_color": "#ffffff"
@@ -328,6 +339,13 @@ Table-based: logo mark (48px) with brand-color `border-right`, name/title/contac
 
 ---
 
+## Step 11: Verify and Save
+
+1. **Render a proof sheet** (scratchpad HTML): every logo variation on light, dark, and brand-color backgrounds; the icon mark at 16, 32, 48, and 180px; the favicon in a mock browser tab; the avatar inside a circle crop. Screenshot it (`npx playwright screenshot --full-page "file://$PWD/brand-proof.html" proof.png`) and view it with Read. Check: mark still recognizable at 16px, no strokes vanish, contrast holds on every background, nothing touches the circular crop.
+2. **Offer to write back** to `.agents/design-context.md`, updating only changed fields: Brand Identity (name, tagline), Color System rows (hex), Typography fonts, Design Style archetype, and Brand Marks (Logo description, Icon Style). Show the diff and ask before saving.
+
+---
+
 ## Quick Reference: Brand Identity Checklist
 
 1. Define brand personality (3-5 adjectives).
@@ -340,3 +358,4 @@ Table-based: logo mark (48px) with brand-color `border-right`, name/title/contac
 8. Build favicons and app icons.
 9. Create social media avatar.
 10. Document everything in a brand guidelines page.
+11. Render a proof sheet, inspect it, and save the brand to design-context.

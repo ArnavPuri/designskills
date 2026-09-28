@@ -1,8 +1,10 @@
 ---
 name: presentation-design
 description: >
-  Design slide decks and presentations with HTML/CSS: layouts, typography,
-  data visualization, and transitions. Trigger phrases: "presentation",
+  Design slide decks as HTML/CSS (custom or reveal.js): slide layouts on a fixed
+  16:9 canvas, presentation typography, slide charts, builds and transitions,
+  speaker notes, and PDF export. Use for decks presented or shared from the browser;
+  for native .pptx files use a PowerPoint-specific tool. Trigger phrases: "presentation",
   "slide deck", "slides", "pitch deck", "keynote", "reveal.js",
   "slide design", "presentation template", "speaker notes"
 license: MIT
@@ -14,8 +16,9 @@ Create visually stunning slide decks using HTML and CSS.
 
 ## Prerequisites
 
-- Read any design-context files for brand colors, fonts, or presentation templates.
-- Identify the audience, purpose, and length of the presentation.
+- Read `.agents/design-context.md` (see `design-context`) for brand colors, heading/body fonts, and style archetype; map them to `--slide-*` variables (Step 9). Use the shared `--brand-*` / `--gray-*` scale from color-palette.
+- Identify the audience, purpose, and length of the presentation, and whether it will be projected, screen-shared, or sent as a PDF.
+- For photographic backgrounds or illustrations, generate them with the `image-generation` skill (`--aspect-ratio 16:9`) and keep text on a solid or overlaid area, not directly on busy image regions.
 
 ---
 
@@ -76,16 +79,25 @@ Create visually stunning slide decks using HTML and CSS.
 
 ---
 
-## Step 2: Slide Container (16:9)
+## Step 2: Slide Container (Fixed 16:9 Canvas)
+
+Design every slide on a fixed 1280x720 canvas and scale the whole canvas to the screen. All rem/px sizes in this skill assume that canvas, so type stays proportional on a laptop, a projector, or a PDF page.
 
 ```css
+html, body { margin: 0; height: 100%; background: black; overflow: hidden; }
+.deck { position: fixed; inset: 0; }
 .slide {
-  width: 100%; aspect-ratio: 16 / 9; max-width: 1280px; max-height: 720px;
-  overflow: hidden; position: relative; font-family: var(--font-body);
+  position: absolute; left: 50%; top: 50%; width: 1280px; height: 720px;
+  transform: translate(-50%, -50%) scale(var(--deck-scale, 1));
+  overflow: hidden; font-family: var(--font-body); background: var(--slide-bg, white);
 }
-.presentation { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; background: black; }
-.presentation .slide { width: 100vw; height: 56.25vw; max-height: 100vh; max-width: 177.78vh; }
-.slide-content { padding: 4rem 6rem; } /* Safe margins */
+.slide-content { padding: 4rem 6rem; } /* Safe margins: keep text out of the outer ~5% */
+```
+
+```js
+const fit = () => document.documentElement.style.setProperty(
+  '--deck-scale', Math.min(innerWidth / 1280, innerHeight / 720));
+addEventListener('resize', fit); fit();
 ```
 
 ---
@@ -128,23 +140,38 @@ Use `font-display: block` for presentation fonts to avoid FOUT during live prese
 ### CSS Bar Chart
 
 ```css
-.chart-bars { display: flex; align-items: flex-end; gap: 2rem; height: 300px; padding-top: 2rem; }
+.chart-bars { display: flex; align-items: flex-end; gap: 2rem; height: 300px; padding-top: 2rem; margin-bottom: 2.5rem; /* room for .bar-label */ }
 .bar { flex: 1; height: calc(var(--value) * 1%); background: var(--brand-500); border-radius: 0.5rem 0.5rem 0 0; position: relative; transition: height 0.6s var(--ease-out); }
-.bar-value { position: absolute; top: -2rem; font-weight: 700; font-size: 1.25rem; }
-.bar-label { position: absolute; bottom: -2rem; font-size: 1rem; color: var(--gray-500); }
+.bar-value, .bar-label { position: absolute; left: 0; right: 0; text-align: center; }
+.bar-value { top: -2rem; font-weight: 700; font-size: 1.25rem; }
+.bar-label { bottom: -2rem; font-size: 1rem; color: var(--gray-600); }
+```
+
+```html
+<div class="chart-bars" role="img" aria-label="Revenue by quarter: Q1 40%, Q2 55%, Q3 70%, Q4 90%">
+  <div class="bar" style="--value: 40"><span class="bar-value">40%</span><span class="bar-label">Q1</span></div>
+  <!-- ... -->
+</div>
 ```
 
 ### CSS Donut Chart
 
 ```css
-.donut { width: 200px; height: 200px; border-radius: 50%; background: conic-gradient(var(--brand-500) 0% 65%, var(--gray-200) 65% 100%); display: grid; place-items: center; }
-.donut::after { content: '65%'; width: 140px; height: 140px; background: white; border-radius: 50%; display: grid; place-items: center; font-size: 2rem; font-weight: 800; }
+.donut { --pct: 65%; width: 200px; height: 200px; border-radius: 50%; background: conic-gradient(var(--brand-500) 0 var(--pct), var(--gray-200) var(--pct) 100%); display: grid; place-items: center; }
+.donut-label { width: 140px; height: 140px; background: var(--slide-bg, white); border-radius: 50%; display: grid; place-items: center; font-size: 2rem; font-weight: 800; }
 ```
+
+```html
+<div class="donut" style="--pct: 65%" role="img" aria-label="65% of customers renewed"><span class="donut-label" aria-hidden="true">65%</span></div>
+```
+
+For anything beyond one or two series, use a real chart library (see the `dataviz` guidance if available) rather than CSS shapes.
 
 ### Rules for Slide Charts
 1. Minimize gridlines and labels -- communicate a trend, not precise data
 2. Highlight the key data point (larger, different color, label it)
-3. Animate chart elements on slide entrance for impact
+3. Chart marks need 3:1 contrast against the slide background (WCAG 1.4.11); label values directly instead of relying on a color legend
+4. Animate chart elements on slide entrance for impact
 
 ---
 
@@ -168,26 +195,37 @@ Use `font-display: block` for presentation fonts to avoid FOUT during live prese
 
 ```css
 @property --num { syntax: '<integer>'; initial-value: 0; inherits: false; }
-.stat-number { animation: count-up 2s var(--ease-out) forwards; counter-reset: num var(--num); }
-.stat-number::after { content: counter(num) '%'; }
-@keyframes count-up { from { --num: 0; } to { --num: 65; } }
+.stat-countup { --target: 65; animation: count-up 2s var(--ease-out) forwards; counter-reset: num var(--num); }
+.stat-countup::after { content: counter(num) '%'; }
+@keyframes count-up { from { --num: 0; } to { --num: var(--target); } }
+@media (prefers-reduced-motion: reduce) { .stat-countup { animation: none; --num: var(--target); } }
 ```
+
+Keep the element empty (the number is generated) and give it `aria-label="65%"`, since screen readers may skip or announce every frame of generated content.
 
 ---
 
 ## Step 7: Speaker Notes
 
+Put notes in an `<aside class="notes">` inside each slide -- the same markup reveal.js uses, so decks can move between the custom system and reveal.js.
+
 ```html
-<section class="slide" data-notes="Explain the key metric here."><!-- slide content --></section>
+<section class="slide">
+  <!-- slide content -->
+  <aside class="notes">Explain the key metric here. Pause for questions.</aside>
+</section>
 ```
 
 ```css
-.speaker-notes { display: none; }
-@media print, screen and (min-width: 1800px) {
-  .presentation-wrapper { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; }
-  .speaker-notes { display: block; padding: 2rem; font-size: 1.125rem; line-height: 1.6; border-left: 3px solid var(--brand-500); }
+.notes { display: none; }
+/* Press N (see Step 8 JS) to show notes as an overlay while rehearsing */
+.show-notes .slide.is-active .notes {
+  display: block; position: absolute; inset: auto 0 0 0; max-height: 35%; overflow: auto;
+  padding: 1.5rem 2rem; background: oklch(0.2 0 0 / 0.92); color: white; font-size: 1.25rem; line-height: 1.5;
 }
 ```
+
+For a real presenter view on a second screen, use reveal.js (press `S`).
 
 ---
 
@@ -195,9 +233,10 @@ Use `font-display: block` for presentation fonts to avoid FOUT during live prese
 
 ### Custom Slide System (No Framework)
 
+Uses the Step 2 canvas; inactive slides are hidden with `inert` so their links aren't tabbable and screen readers only see the current slide.
+
 ```css
-.deck { width: 100vw; height: 100vh; overflow: hidden; position: relative; }
-.slide { position: absolute; inset: 0; display: flex; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; }
+.slide { display: flex; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; }
 .slide.is-active { opacity: 1; pointer-events: auto; }
 ```
 
@@ -205,15 +244,16 @@ Use `font-display: block` for presentation fonts to avoid FOUT during live prese
 let current = 0;
 const slides = document.querySelectorAll('.slide');
 function goTo(index) {
-  slides[current].classList.remove('is-active');
   current = Math.max(0, Math.min(index, slides.length - 1));
-  slides[current].classList.add('is-active');
+  slides.forEach((s, i) => { s.classList.toggle('is-active', i === current); s.inert = i !== current; });
+  history.replaceState(null, '', '#' + (current + 1)); // deep-linkable
 }
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'ArrowRight' || e.key === ' ') goTo(current + 1);
-  if (e.key === 'ArrowLeft') goTo(current - 1);
+  if (['ArrowRight', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); goTo(current + 1); }
+  if (['ArrowLeft', 'PageUp'].includes(e.key)) goTo(current - 1);
+  if (e.key.toLowerCase() === 'n') document.body.classList.toggle('show-notes');
 });
-goTo(0);
+goTo((parseInt(location.hash.slice(1), 10) || 1) - 1);
 ```
 
 For Reveal.js, load from CDN and customize with CSS variables (`--r-heading-font`, `--r-main-color`, `--r-link-color`).
@@ -226,10 +266,10 @@ For Reveal.js, load from CDN and customize with CSS variables (`--r-heading-font
 .deck {
   --slide-bg: white; --slide-heading-color: var(--gray-900);
   --slide-text-color: var(--gray-600); --slide-accent: var(--brand-500);
-  font-family: var(--slide-font);
+  font-family: var(--font-body); /* design-context Body Font; headings use --font-heading */
 }
 .slide::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: var(--slide-accent); }
-.slide-number { position: absolute; bottom: 1.5rem; right: 2rem; font-size: 0.875rem; color: var(--gray-400); font-variant-numeric: tabular-nums; }
+.slide-number { position: absolute; bottom: 1.5rem; right: 2rem; font-size: 0.875rem; color: var(--gray-500); font-variant-numeric: tabular-nums; }
 .slide-logo { position: absolute; bottom: 1.5rem; left: 2rem; width: 80px; opacity: 0.3; }
 ```
 
@@ -263,3 +303,9 @@ The last slide stays up longest during Q&A. Include:
 8. Include speaker notes for every content slide.
 9. Closing slide: CTA + contact. Keep it on screen during Q&A.
 10. Test on a projector or large screen -- colors appear washed out.
+
+## Verify and Export
+
+1. **Screenshot every slide** at 1920x1080 with Playwright (loop over `#1…#N`, `page.goto(url + '#' + n)`, `page.screenshot({ path: 'slide-' + n + '.png' })`) and view each with Read. Check: no text overflowing or clipped by `overflow: hidden`, one idea per slide, headline readable at thumbnail size, consistent margins and slide-number position, brand colors correct.
+2. **Contrast**: text on brand-color and image backgrounds must meet 4.5:1 (3:1 for ≥24px text); projectors lower contrast further, so aim higher.
+3. **PDF**: for the custom system, add `@media print { .slide { position: relative; transform: none; left: 0; top: 0; break-after: page; opacity: 1; } }` and `@page { size: 1280px 720px; margin: 0; }`, then `page.pdf({ path: 'deck.pdf', preferCSSPageSize: true, printBackground: true })`. For reveal.js, open with `?print-pdf` first.

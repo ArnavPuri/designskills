@@ -1,8 +1,10 @@
 ---
 name: icon-design
 description: >
-  Design consistent icon systems with SVG: grids, styles, animation,
-  and accessibility. Trigger phrases: "icon design", "svg icon", "icon system",
+  Design and implement consistent SVG icon systems for UI: keyline grids, stroke
+  rules, optical corrections, outline/filled/duotone styles, icon+text alignment,
+  animation, and accessible markup. Use for UI icons in code; for a logo mark use
+  brand-identity, for illustrations use image-generation. Trigger phrases: "icon design", "svg icon", "icon system",
   "custom icons", "icon animation", "icon grid", "icon accessibility",
   "duotone icon", "icon set", "animated icon"
 license: MIT
@@ -14,8 +16,8 @@ Create consistent, accessible, and beautiful icon systems using SVG and CSS.
 
 ## Prerequisites
 
-- Read any design-context files for existing icon libraries, stroke widths, or style preferences.
-- If a design system exists, match its icon style (outline, filled, duotone) and sizing grid.
+- Read `.agents/design-context.md` (see `design-context`): the Brand Marks "Icon Style" field (e.g. "Outlined, 2px stroke, rounded caps") sets fill, stroke width, and cap/join style for every icon you draw. Use the semantic colors (`--success-*`, `--error-*`, etc.) from the shared color tokens.
+- If the project already uses an icon library (Lucide, Heroicons, Phosphor, Material Symbols), match its grid and stroke instead of mixing in a different style; prefer using the library icon over drawing a new one.
 
 ---
 
@@ -50,18 +52,20 @@ Create consistent, accessible, and beautiful icon systems using SVG and CSS.
 
 | Grid  | Usage                     | Stroke width |
 |-------|---------------------------|-------------|
-| 24x24 | Default UI icons          | 2px          |
+| 24x24 | Default UI icons          | 2px (1.5px for a lighter set) |
 | 20x20 | Compact UI, form fields   | 1.5px        |
-| 16x16 | Inline text, badges       | 1.5px        |
-| 32x32 | Feature icons, navigation | 2px          |
-| 48x48 | Illustration icons, hero  | 2px          |
+| 16x16 | Inline text, badges       | 1.5px (or filled) |
+| 32x32 | Feature icons, navigation | 2-2.5px      |
+| 48x48 | Illustration icons, hero  | 3px          |
 
-### Grid Zones (24x24)
+Draw each size on its own grid with whole-pixel coordinates when possible. Scaling a 24px icon down to 16px via CSS also scales the stroke (2px becomes 1.33px, blurry); either draw a 16px variant or use `vector-effect="non-scaling-stroke"` on the paths.
 
-- **Live area**: 20x20 (2px padding on each side)
-- **Trim area**: Full 24x24 for optical adjustments
-- Square icons fill the 20x20 live area; circular icons can extend to ~22x22
-- Tall/narrow icons stay within 20px height, narrower width
+### Keyline Shapes (24x24, Material-style)
+
+- **Live area**: 20x20 (2px padding on each side); the padding is for optical overshoot only
+- **Circle**: 20x20 diameter
+- **Square**: 18x18 (circles look smaller than squares of equal size, so squares are drawn smaller)
+- **Portrait rectangle**: 16w x 20h; **Landscape rectangle**: 20w x 16h
 
 ### CSS Sizing
 
@@ -80,11 +84,11 @@ Create consistent, accessible, and beautiful icon systems using SVG and CSS.
 | Shape       | Correction                                    |
 |-------------|-----------------------------------------------|
 | Triangle/Play| Shift right ~1px (optical center of mass)    |
-| Circle      | Scale up ~2% (circles look smaller than squares)|
+| Circle      | Draw ~10% larger than a square (20 vs 18 keyline)|
 | Tall shapes | Center vertically, may need slight Y offset   |
 | Pointed tops| Let point extend slightly above grid boundary  |
 
-Circles and curved shapes need slightly thicker strokes to match the visual weight of straight lines. If your system uses stroke-width 2, consider 2.25 for circular elements.
+Keep stroke width identical across the whole set -- compensate optically with size and position, not by varying stroke. Uneven stroke weights are the most visible sign of an inconsistent set.
 
 ---
 
@@ -145,7 +149,7 @@ Rounded (stroke-linecap: round) feels friendly and modern. Sharp (stroke-linecap
 ```svg
 <!-- Home icon from primitives -->
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-     stroke-linecap="round" stroke-linejoin="round">
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
   <polyline points="3 11 12 3 21 11"/>
   <path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/>
 </svg>
@@ -165,7 +169,7 @@ Rounded (stroke-linecap: round) feels friendly and modern. Sharp (stroke-linecap
 .btn-icon .icon { width: 1.25em; height: 1.25em; margin-left: -0.125em; }
 
 /* Icon-only button */
-.btn-icon-only { display: inline-grid; place-items: center; width: 2.5rem; height: 2.5rem; padding: 0; border-radius: 0.5rem; }
+.btn-icon-only { display: inline-grid; place-items: center; width: 2.75rem; height: 2.75rem; padding: 0; border-radius: 0.5rem; } /* 44px target */
 ```
 
 ---
@@ -185,7 +189,20 @@ Rounded (stroke-linecap: round) feels friendly and modern. Sharp (stroke-linecap
 ```
 
 ### Checkmark Draw-On
-Use `stroke-dasharray` and `stroke-dashoffset` with keyframe animation to create a draw-on effect. Set dasharray to the path length, offset to the same value, then animate offset to 0.
+`pathLength="1"` normalizes the path length, so you don't need to measure it:
+
+```html
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+  <path class="draw" pathLength="1" d="M5 12.5l4.5 4.5L19 7.5"/>
+</svg>
+```
+```css
+.draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 0.4s var(--ease-out, ease-out) forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .draw { animation: none; stroke-dashoffset: 0; } }
+```
+
+Wrap hover rotations the same way. A spinner may keep rotating under reduced motion (it conveys state, not decoration), but slow it down or swap to a pulsing opacity.
 
 ---
 
@@ -193,9 +210,10 @@ Use `stroke-dasharray` and `stroke-dashoffset` with keyframe animation to create
 
 ### Rules
 1. **Decorative icons** (next to text labels): `aria-hidden="true" focusable="false"`
-2. **Meaningful icons** (standalone): provide `aria-label` on the button, or use `<title>` inside SVG with `role="img" aria-labelledby`
+2. **Meaningful icons** (standalone): provide `aria-label` on the button (and `aria-hidden="true"` on the SVG inside it), or use `<title>` inside SVG with `role="img" aria-labelledby`
 3. Never rely on icon alone for critical actions -- always provide a text alternative
-4. Ensure icon buttons have minimum 44x44px touch target
+4. Icon buttons: 24x24px minimum target is the WCAG 2.2 AA floor (SC 2.5.8); aim for 44x44px (Apple HIG, WCAG AAA 2.5.5) or 48x48dp (Material)
+5. Icons that convey meaning need 3:1 contrast against their background (SC 1.4.11)
 
 ```css
 .icon-button { min-width: 44px; min-height: 44px; display: inline-grid; place-items: center; }
@@ -211,7 +229,7 @@ Use `stroke-dasharray` and `stroke-dashoffset` with keyframe animation to create
 .icon-badge {
   position: absolute; top: -4px; right: -4px;
   width: 10px; height: 10px; background: var(--error-500);
-  border-radius: 50%; border: 2px solid white;
+  border-radius: 50%; border: 2px solid var(--bg-primary, white);
 }
 ```
 
@@ -220,12 +238,20 @@ Use `stroke-dasharray` and `stroke-dashoffset` with keyframe animation to create
 .status-icon { position: relative; }
 .status-icon::after {
   content: ''; position: absolute; bottom: 0; right: 0;
-  width: 8px; height: 8px; border-radius: 50%; border: 2px solid white;
+  width: 8px; height: 8px; border-radius: 50%; border: 2px solid var(--bg-primary, white);
 }
 .status-icon--online::after  { background: var(--success-500); }
 .status-icon--offline::after { background: var(--gray-400); }
 .status-icon--busy::after    { background: var(--error-500); }
 ```
+
+Status dots rely on color alone -- pair them with a text label or `aria-label` ("Online"), and use `var(--bg-primary)` instead of `white` for the ring so it works in dark mode.
+
+---
+
+## Verify the Set
+
+Render every icon on one scratchpad HTML page at 16, 20, 24, and 32px, on light and dark backgrounds, next to a text label, and screenshot it (`npx playwright screenshot --full-page "file://$PWD/icons.html" icons.png`). View the image with Read (also a 4x-zoomed copy for 16px) and check: equal visual weight across icons, identical stroke widths, nothing clipped at the viewBox edge, shapes aligned to the keylines, recognizable at 16px.
 
 ---
 
@@ -239,5 +265,5 @@ Use `stroke-dasharray` and `stroke-dashoffset` with keyframe animation to create
 6. Size icons with `em` units when inline with text.
 7. Always add `aria-hidden="true"` to decorative icons.
 8. Always add `aria-label` to icon-only buttons.
-9. Ensure 44x44px minimum touch targets.
+9. Aim for 44x44px touch targets (24x24px is the WCAG 2.2 AA minimum).
 10. Use `stroke-dasharray` + `stroke-dashoffset` for draw-on animations.
