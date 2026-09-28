@@ -1,9 +1,12 @@
 ---
 name: product-mockup
 description: >
-  Product mockup and showcase design via AI image generation and code generation.
-  Device frames, 3D CSS transforms, lifestyle presentations, feature callouts,
-  and packaging visualization. Supports Gemini 3.1 Flash Image Preview.
+  Product mockups and showcases: photoreal product/packaging scenes via Gemini 3.1 Flash
+  image editing, and pixel-exact device frames (phone, laptop, browser) around real
+  screenshots via HTML/CSS. Covers 3D CSS transforms, lifestyle staging, feature callouts,
+  before/after, and e-commerce product shots. Use when the goal is presenting a product or
+  UI itself; for a marketing graphic that merely includes a product use graphic-design,
+  social-media-graphic, or ad-creative-design.
   Trigger phrases: "create a product mockup", "device mockup", "phone mockup",
   "laptop mockup", "product showcase", "screenshot mockup", "app preview",
   "product presentation", "mockup design".
@@ -12,21 +15,29 @@ license: MIT
 
 # Product Mockup Design
 
-Create professional product mockups and showcases using pure HTML/CSS. Device frames, 3D perspective transforms, feature callouts, and presentation layouts.
+Create professional product mockups and showcases. Two paths:
+
+- **Gemini (default for physical products):** product photo + prompt -> photoreal staged scene, packaging, lifestyle shot
+- **HTML/CSS (default for app/web screenshots):** Gemini redraws UI and will alter text, icons, and layout, so wrap real screenshots in CSS device frames (Steps 3-9) and render to PNG. For a photoreal device scene, generate the scene with a blank screen, then composite the screenshot in code
 
 ---
 
 ## Step 1: Load Design Context
 
-1. Read `.agents/design-context.md` for brand colors, fonts, style
-2. If missing, ask user to run `design-context` skill or use defaults
+1. Read `.agents/design-context.md` first -- brand colors (hex), fonts, style archetype
+2. If missing, use the `design-context` Default Fallbacks and tell the user defaults were used
 3. Product mockups should match the brand's design style (minimal, bold, luxurious, etc.)
 
 ---
 
-## Gemini 3.1 Flash Image Preview
+## Gemini Image Generation Path
 
-For AI image generation, see the `image-generation` skill for the full Gemini pipeline. Below are domain-specific prompt patterns for this skill.
+Pipeline/CLI: `image-generation`. Prompt craft, cropping, and text-overlay fallback: `graphic-design` Step 3.
+
+1. Pass the product photo with `--image product.png` and say "keep the product's shape, colors, label text, and logo exactly as in the reference"
+2. Ratio: 1:1 or 4:5 for e-commerce and social, 16:9 or 3:2 for web heroes; crop to exact pixels with `--resize WxH`
+3. Read the output PNG and compare it with the source photo: label text, logo, proportions, color, and part count must match. AI "improvements" to the product are defects. Fix one issue per follow-up turn
+4. Marketplace main images (e.g. Amazon) usually require a pure white #FFFFFF background, the product filling ~85% of the frame, and >=1000px on the longest side (1600+ for zoom) -- check the marketplace's current rules
 
 ### Example Prompts
 
@@ -212,10 +223,12 @@ For AI image generation, see the `image-generation` skill for the full Gemini pi
 ## Step 8: Packaging Visualization (3D Box)
 
 ```css
-.product-box { width: 200px; height: 280px; position: relative; transform-style: preserve-3d; transform: rotateY(-25deg) rotateX(5deg); }
+.product-box { width: 200px; height: 280px; position: relative; transform-style: preserve-3d; transform: rotateX(-12deg) rotateY(-25deg); /* negative X tilt shows the top face */ }
 .box-front { position: absolute; width: 200px; height: 280px; background: var(--primary); transform: translateZ(30px); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; border-radius: 4px; }
-.box-side { position: absolute; width: 60px; height: 280px; background: color-mix(in srgb, var(--primary) 80%, black); transform: rotateY(90deg) translateZ(200px) translateX(-30px); }
-.box-top { position: absolute; width: 200px; height: 60px; background: color-mix(in srgb, var(--primary) 90%, white); transform: rotateX(90deg) translateZ(0) translateY(-30px); }
+/* Box is 200w x 280h x 60d, centered on z=0: front at +30, side at x=200, top at y=0 */
+.box-side { position: absolute; left: 0; top: 0; width: 60px; height: 280px; background: color-mix(in srgb, var(--primary) 80%, black); transform: rotateY(90deg) translateZ(170px); /* 170 = width - depth/2 */ }
+.box-top { position: absolute; left: 0; top: 0; width: 200px; height: 60px; background: color-mix(in srgb, var(--primary) 90%, white); transform: rotateX(90deg) translateZ(30px); /* 30 = depth/2 */ }
+/* Wrap .product-box in a parent with `perspective: 1000px` */
 ```
 
 ---
@@ -252,4 +265,7 @@ For AI image generation, see the `image-generation` skill for the full Gemini pi
 - Brand colors from design-context used for stage/background
 - Multiple devices are properly scaled relative to each other
 - The overall composition draws attention to the product
+- Gemini output was Read and compared against the source product photo (label, logo, shape unchanged)
+- Screenshots in device frames are the real, unaltered UI and are not stretched (match the screen's aspect ratio)
+- Code output rendered to PNG (`chromium --headless --screenshot`) and the PNG Read before delivery
 - Code is self-contained HTML/CSS

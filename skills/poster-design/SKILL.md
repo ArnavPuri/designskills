@@ -1,9 +1,11 @@
 ---
 name: poster-design
 description: >
-  Event posters, promotional flyers, and announcement design via AI image generation
-  and code generation. Covers composition frameworks, typography hierarchy, and
-  background techniques for print and web. Supports Gemini 3.1 Flash Image Preview.
+  Event posters, promotional flyers, and announcement pieces for print or digital display,
+  via Gemini 3.1 Flash image generation (default) or HTML/CSS. Covers print specs (bleed,
+  300 DPI, CMYK), composition frameworks, typography hierarchy, and backgrounds. Use when the
+  piece is a standalone portrait/landscape poster or flyer; for feed posts use
+  social-media-graphic, for web/email banners use banner-design.
   Trigger phrases: "design a poster", "create a flyer", "event poster",
   "promotional poster", "announcement design", "concert poster", "sale flyer",
   "product launch poster".
@@ -12,21 +14,25 @@ license: MIT
 
 # Poster Design
 
-Create striking posters for events, promotions, announcements, and product launches. Output as production-ready HTML/CSS/SVG sized for both print and web display.
+Create striking posters for events, promotions, announcements, and product launches. Default output is a Gemini-generated image at the right ratio and resolution; use HTML/CSS/SVG when copy is dense or must stay editable, then render to PNG/PDF.
 
 ---
 
 ## Step 1: Load Design Context
 
-1. Read `.agents/design-context.md` for brand colors, fonts, style archetype
-2. If missing, ask user to run `design-context` skill or proceed with defaults
+1. Read `.agents/design-context.md` first -- brand colors (hex), fonts, style archetype
+2. If missing, use the `design-context` Default Fallbacks and tell the user defaults were used
 3. Posters often have more creative freedom than other formats -- but brand colors and fonts should still anchor the design
 
 ---
 
-## Gemini 3.1 Flash Image Preview
+## Gemini Image Generation Path
 
-For AI image generation, see the `image-generation` skill for the full Gemini pipeline. Below are domain-specific prompt patterns for this skill.
+Pipeline/CLI: `image-generation`. Prompt craft, cropping, and text-overlay fallback: `graphic-design` Step 3.
+
+1. Pick the Gemini ratio from the Step 2 table; use `--size 4K` for print, `2K` for digital
+2. Ask for margins: "keep all text at least 5% inside every edge" -- protects the trim and bleed
+3. Read the output PNG: check event name, date, time, venue, price, and URL character by character -- a wrong date ruins a poster. Fix one issue per follow-up turn; move fine print into a code overlay if it keeps garbling
 
 ### Example Prompts
 
@@ -40,18 +46,27 @@ For AI image generation, see the `image-generation` skill for the full Gemini pi
 
 ### Standard Dimensions
 
-| Format | Pixels (72dpi web) | Print Size | Use Case |
-|--------|-------------------|------------|----------|
-| A4 Portrait | 595 x 842 | 210 x 297mm | Standard flyer |
-| A3 Portrait | 842 x 1191 | 297 x 420mm | Large poster |
-| US Letter | 612 x 792 | 8.5 x 11in | Standard US flyer |
-| US Tabloid | 792 x 1224 | 11 x 17in | Large US poster |
-| Web Poster | 800 x 1200 | N/A | Digital distribution |
-| Wide Web | 1200 x 800 | N/A | Web banner / landscape |
-| Social Poster | 1080 x 1350 | N/A | Instagram portrait |
-| Square | 1080 x 1080 | N/A | Multi-platform |
+| Format | Print Size | Pixels @300 DPI (trim) | Gemini ratio | Use Case |
+|--------|------------|-----------------------|--------------|----------|
+| A4 Portrait | 210 x 297mm | 2480 x 3508 | 2:3 or 3:4, then crop | Standard flyer |
+| A3 Portrait | 297 x 420mm | 3508 x 4961 | 2:3 or 3:4, then crop | Large poster |
+| US Letter | 8.5 x 11in | 2550 x 3300 | 3:4, then crop | Standard US flyer |
+| US Tabloid | 11 x 17in | 3300 x 5100 | 2:3, then crop | Large US poster |
+| 18 x 24in | 18 x 24in | 5400 x 7200 | 3:4 | Standard poster |
+| 24 x 36in | 24 x 36in | 7200 x 10800 | 2:3 | Large poster |
+| Web Poster | N/A | 800 x 1200 | 2:3 | Digital distribution |
+| Social Poster | N/A | 1080 x 1350 | 4:5 | Instagram portrait |
 
-For print-quality output at 300dpi, multiply pixel dimensions by ~4.17 (300/72).
+(At 72 DPI, A4 = 595 x 842 and Letter = 612 x 792 -- screen previews only.)
+
+### Print Specs
+
+- **Bleed:** extend background 3mm (metric) or 0.125in (US) past the trim on every side. A4 with bleed = 216 x 303mm = 2551 x 3579px @300 DPI. Crop Gemini output to the *bleed* size, not the trim size
+- **Safe margin:** keep text and logos at least 3-5mm (0.125-0.25in) inside the trim
+- **Resolution:** 300 DPI at final size for handheld flyers; 150-200 DPI is fine for large posters viewed from 1m+. Gemini 4K tops out around 4K px on the long side -- enough for A4/Letter at ~300 DPI, ~200 DPI at A3/Tabloid; upscale or rebuild in vector/code for 18 x 24in and up
+- **Color:** Gemini and browsers output RGB. Ask the printer whether they accept RGB PDFs; if CMYK is required, convert with the printer's ICC profile (Pillow `ImageCms` or a layout tool) and re-check saturated blues/greens, which shift most
+- **Set DPI metadata:** `img.save("poster.png", dpi=(300, 300))` -- pixels, not metadata, determine quality
+- **Readable distance:** ~1 inch (25mm) of letter height per 10 feet (3m) of viewing distance for the headline
 
 ---
 
@@ -146,10 +161,12 @@ Posters need extreme typographic hierarchy. The headline must be readable from a
 ### Four-Level Hierarchy
 
 ```css
+/* Fixed-size poster canvas: set `container-type: inline-size` on .poster so cqw
+   scales with the poster width, not the browser window */
 /* Level 1: Display / Headline -- the hook */
 .poster-headline {
   font-family: var(--font-heading);
-  font-size: clamp(48px, 8vw, 96px);
+  font-size: clamp(48px, 10cqw, 160px);
   font-weight: 800;
   line-height: 0.95;
   letter-spacing: -0.03em;
@@ -159,7 +176,7 @@ Posters need extreme typographic hierarchy. The headline must be readable from a
 /* Level 2: Subheadline -- context */
 .poster-subheadline {
   font-family: var(--font-heading);
-  font-size: clamp(20px, 3vw, 32px);
+  font-size: clamp(20px, 4cqw, 48px);
   font-weight: 400;
   line-height: 1.3;
   letter-spacing: 0.02em;
@@ -168,7 +185,7 @@ Posters need extreme typographic hierarchy. The headline must be readable from a
 /* Level 3: Body / Details -- the specifics */
 .poster-body {
   font-family: var(--font-body);
-  font-size: clamp(14px, 2vw, 18px);
+  font-size: clamp(14px, 2.2cqw, 24px);
   font-weight: 400;
   line-height: 1.5;
 }
@@ -176,7 +193,7 @@ Posters need extreme typographic hierarchy. The headline must be readable from a
 /* Level 4: Fine print / Meta -- secondary info */
 .poster-meta {
   font-family: var(--font-body);
-  font-size: clamp(10px, 1.2vw, 14px);
+  font-size: clamp(11px, 1.5cqw, 16px);
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -351,12 +368,8 @@ Posters need extreme typographic hierarchy. The headline must be readable from a
   text-transform: uppercase;
   text-decoration: none;
   border-radius: 4px;
-  transition: transform 0.2s, box-shadow 0.2s;
 }
-.poster-cta:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-}
+/* Print: a CTA is a label, not a button -- pair it with a short URL or QR code (min ~2cm) */
 ```
 
 ---
@@ -415,53 +428,16 @@ Posters need extreme typographic hierarchy. The headline must be readable from a
 
 ## Step 8: Decorative Elements
 
-### Dividers and Rules
 ```css
 /* Gradient rule */
-.divider {
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  margin: 24px 0;
-}
-
-/* Ornamental divider */
-.ornament-divider {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-.ornament-divider::before,
-.ornament-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: currentColor;
-  opacity: 0.3;
-}
-```
-
-### Floating Shapes
-```css
-.floating-shape {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(60px);
-  opacity: 0.2;
-  pointer-events: none;
-}
-.shape-1 { width: 300px; height: 300px; background: var(--primary); top: -100px; right: -50px; }
-.shape-2 { width: 200px; height: 200px; background: var(--accent); bottom: 10%; left: -30px; }
-```
-
-### Border Frame
-```css
-.poster-frame {
-  position: absolute;
-  inset: 16px;
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 4px;
-  pointer-events: none;
-}
+.divider { height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); margin: 24px 0; }
+/* Ornamental divider: lines either side of a centered label */
+.ornament-divider { display: flex; align-items: center; gap: 16px; }
+.ornament-divider::before, .ornament-divider::after { content: ''; flex: 1; height: 1px; background: currentColor; opacity: 0.3; }
+/* Blurred floating shapes behind content */
+.floating-shape { position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.2; pointer-events: none; }
+/* Inset border frame (keep it inside the safe margin for print) */
+.poster-frame { position: absolute; inset: 16px; border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; pointer-events: none; }
 ```
 
 ---
@@ -476,5 +452,6 @@ Posters need extreme typographic hierarchy. The headline must be readable from a
 - [ ] Composition follows a clear framework (Z, focal, split, or grid)
 - [ ] Whitespace is sufficient -- nothing feels cramped
 - [ ] Decorative elements enhance without competing with content
-- [ ] Dimensions match the intended output format
-- [ ] Code is self-contained HTML/CSS
+- [ ] Dimensions match the intended output format; print files include bleed and meet the DPI target
+- [ ] Output PNG was Read: every date, time, venue, price, and URL is exactly right
+- [ ] Code output (if used) is self-contained HTML/CSS

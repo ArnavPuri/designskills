@@ -1,9 +1,11 @@
 ---
 name: social-media-graphic
 description: >
-  Platform-specific social media graphic design via AI image generation and code generation.
-  Generates correctly-sized visuals for Instagram, Twitter/X, LinkedIn, Facebook, Pinterest,
-  and TikTok. Supports Gemini 3.1 Flash Image Preview for AI-generated graphics.
+  Organic social media graphics (posts, stories, carousels, profile headers/covers) sized for
+  Instagram, X/Twitter, LinkedIn, Facebook, Pinterest, and TikTok, with platform safe zones.
+  Defaults to Gemini 3.1 Flash image generation; HTML/CSS for templated carousels. Use for
+  unpaid feed content; for paid ads use ad-creative-design, for website/email banners use
+  banner-design, for YouTube thumbnails and OG images use thumbnail-design.
   Trigger phrases: "create a social media post", "design an Instagram graphic",
   "make a Twitter image", "LinkedIn post graphic", "social media design",
   "Instagram story", "carousel design", "social graphic".
@@ -12,27 +14,45 @@ license: MIT
 
 # Social Media Graphic Design
 
-Generate platform-perfect social media graphics with correct dimensions, safe zones, and platform-specific design patterns. Every graphic is output as production-ready HTML/CSS.
+Generate platform-perfect social media graphics with correct dimensions, safe zones, and platform-specific design patterns. Default output is a Gemini-generated PNG cropped to exact platform pixels; use HTML/CSS (Step 8) for multi-slide carousels with shared templates or copy-heavy posts.
 
 ---
 
 ## Step 1: Load Design Context
 
-1. Read `.agents/design-context.md` for brand colors, fonts, style
-2. If missing, prompt user to run `design-context` skill or use defaults
+1. Read `.agents/design-context.md` first -- brand colors (hex), fonts, style archetype
+2. If missing, use the `design-context` Default Fallbacks and tell the user defaults were used
 3. Social media graphics must be strongly on-brand -- consistency builds recognition
 
 ---
 
-## Gemini 3.1 Flash Image Preview
+## Gemini Image Generation Path
 
-For AI image generation, see the `image-generation` skill for the full Gemini pipeline. Below are domain-specific prompt patterns for this skill.
+Pipeline/CLI: `image-generation`. Prompt craft, cropping, and text-overlay fallback: `graphic-design` Step 3.
+
+1. Generate at the Gemini ratio from the table below; crop to exact pixels with `--resize WxH`
+2. Tell Gemini where the safe zone is ("keep all text in the middle 70% vertically") -- it can't see platform UI
+3. Read the output PNG: check every word's spelling, legibility at phone-feed size, and the Step 3 safe zones; fix one issue per follow-up turn
+
+| Target | Gemini `--aspect-ratio` | `--resize` |
+|--------|------------------------|-----------|
+| IG/FB/LinkedIn square | 1:1 | 1080x1080 |
+| IG/FB/LinkedIn portrait | 4:5 | 1080x1350 |
+| IG feed 3:4 | 3:4 | 1080x1440 |
+| Story / Reel / TikTok cover | 9:16 | 1080x1920 |
+| X in-feed | 16:9 | 1200x675 |
+| Link card / FB / LinkedIn landscape (1.91:1) | 16:9 | 1200x628 |
+| X header (3:1) | 21:9 | 1500x500 |
+| LinkedIn personal banner | 4:1 | 1584x396 |
+| LinkedIn company cover (~5.9:1) | 8:1 | 1128x191 |
+| Facebook page cover | 21:9 | 1640x624 (2x of 820x312) |
+| Pinterest pin | 2:3 | 1000x1500 |
 
 ### Example Prompts
 
 - **Instagram Post:** "Create a square Instagram post graphic for [brand]. [product] centered on [color] gradient. Bold [font-style] text '[headline]'. Clean, modern aesthetic."
-- **Instagram Story:** "Create a vertical story graphic (9:16) for [brand]. [product/subject] as the focal point with [color scheme] background. Text '[headline]' at top, swipe-up CTA '[action]' at bottom. Trendy, editorial style."
-- **LinkedIn Post:** "Create a professional LinkedIn post graphic (1200x627) for [brand]. [topic/statistic] visualized with [chart type or icon]. Headline '[text]' in [font-style]. Corporate blue tones, clean data-driven layout."
+- **Instagram Story:** "Create a vertical story graphic for [brand]. [product/subject] as the focal point with [color scheme] background. Text '[headline]' in the upper-middle, CTA '[action]' above the lower fifth; leave the top and bottom 15% free of text. Trendy, editorial style."
+- **LinkedIn Post:** "Create a professional landscape LinkedIn post graphic for [brand]. [topic/statistic] visualized with [chart type or icon]. Headline '[text]' in [font-style]. Corporate blue tones, clean data-driven layout."
 
 ---
 
@@ -45,9 +65,10 @@ For AI image generation, see the `image-generation` skill for the full Gemini pi
 |--------|-----------|--------------|----------|
 | Feed Post (Square) | 1080 x 1080 | 1:1 | Standard post |
 | Feed Post (Portrait) | 1080 x 1350 | 4:5 | Maximum feed real estate |
+| Feed Post (3:4) | 1080 x 1440 | 3:4 | Matches the 3:4 profile grid (since 2025) |
 | Feed Post (Landscape) | 1080 x 566 | 1.91:1 | Panoramic content |
 | Story / Reel Cover | 1080 x 1920 | 9:16 | Full-screen vertical |
-| Carousel Slide | 1080 x 1080 | 1:1 | Multi-slide posts |
+| Carousel Slide | 1080 x 1080 or 1080 x 1350 | 1:1 / 4:5 | All slides use the first slide's ratio |
 | Profile Picture | 320 x 320 | 1:1 | Circular crop |
 
 #### Twitter / X
@@ -62,14 +83,16 @@ For AI image generation, see the `image-generation` skill for the full Gemini pi
 |--------|-----------|--------------|----------|
 | Feed Post | 1200 x 627 | 1.91:1 | Standard post |
 | Feed Post (Square) | 1200 x 1200 | 1:1 | Square post |
-| Banner | 1128 x 191 | ~5.9:1 | Profile/company banner |
-| Article Cover | 1200 x 644 | 1.86:1 | Article header |
+| Feed Post (Portrait) | 1080 x 1350 | 4:5 | More mobile real estate |
+| Personal Profile Banner | 1584 x 396 | 4:1 | Profile background |
+| Company Page Cover | 1128 x 191 | ~5.9:1 | Company page |
+| Article / Newsletter Cover | 1920 x 1080 | 16:9 | Article header |
 
 #### Facebook
 | Format | Dimensions | Aspect Ratio | Use Case |
 |--------|-----------|--------------|----------|
-| Feed Post | 1200 x 630 | 1.91:1 | Standard post |
-| Cover Photo | 820 x 312 | 2.63:1 | Page cover |
+| Feed Post | 1080 x 1350 or 1200 x 630 | 4:5 / 1.91:1 | 4:5 wins on mobile; 1.91:1 for link shares |
+| Cover Photo | 820 x 312 (upload 1640 x 624) | 2.63:1 | Page cover; mobile shows a 640 x 360 crop |
 | Event Cover | 1920 x 1005 | 1.91:1 | Event banner |
 | Story | 1080 x 1920 | 9:16 | Story format |
 
@@ -77,13 +100,13 @@ For AI image generation, see the `image-generation` skill for the full Gemini pi
 | Format | Dimensions | Aspect Ratio | Use Case |
 |--------|-----------|--------------|----------|
 | Standard Pin | 1000 x 1500 | 2:3 | Optimal engagement |
-| Long Pin | 1000 x 2100 | 1:2.1 | Infographic-style |
+| Long Pin | 1000 x 2100 | 1:2.1 | Feed crops pins taller than 2:3 -- put the hook in the top 1500px |
 | Square Pin | 1000 x 1000 | 1:1 | Alternative format |
 
 #### TikTok
 | Format | Dimensions | Aspect Ratio | Use Case |
 |--------|-----------|--------------|----------|
-| Video Cover | 1080 x 1920 | 9:16 | Thumbnail/cover |
+| Video Cover | 1080 x 1920 | 9:16 | Profile grid shows a ~3:4 center crop |
 
 ---
 
@@ -91,19 +114,26 @@ For AI image generation, see the `image-generation` skill for the full Gemini pi
 
 Every platform has areas where UI elements overlap the content. Keep critical text and visuals inside these safe zones.
 
-### Instagram Feed Post (1080 x 1080)
+### Instagram Feed Post (1080 x 1080 / 1080 x 1350)
 ```
 Safe zone: 60px padding on all sides
-Bottom: keep text above 980px (like/comment bar overlap in previews)
-Top: profile info can overlap top 40px in some views
+Profile grid shows a 3:4 center crop: on 1:1 keep key content in the central 810px width;
+on 4:5 the grid trims ~34px from each side
 ```
 
-### Instagram Story (1080 x 1920)
+### Instagram / Facebook Story (1080 x 1920)
 ```
-Top safe: 200px from top (status bar + story header)
-Bottom safe: 280px from bottom (reply bar + swipe indicator)
+Top safe: 250px from top (~14%: progress bar, profile, close)
+Bottom safe: 250px from bottom (~14%: reply bar, CTA sticker)
 Left/Right safe: 60px from edges
-Content zone: 960w x 1440h centered
+Content zone: 960w x 1420h centered
+```
+
+### Reels / TikTok Cover (1080 x 1920)
+```
+Top: ~220px clear   Bottom: ~420px clear (caption, audio, CTA)
+Right: ~130px clear (like/comment/share rail)
+Keep the headline in the center band -- it also survives the 3:4 grid crop
 ```
 
 ### Twitter/X (1200 x 675)
@@ -122,16 +152,16 @@ Center the main message
 
 ### Facebook Cover (820 x 312)
 ```
-Mobile safe zone: center 640 x 312 (edges hidden on mobile)
-Profile photo overlaps bottom-left 170px area
-Keep text center-right
+Desktop shows 820 x 312; mobile shows full height but crops the sides (~555px of 820 visible)
+Mobile safe zone: center ~555 x 312
+Profile photo can overlap the bottom-left -- keep text centered
 ```
 
 ### Pinterest Pin (1000 x 1500)
 ```
-Top safe: 80px (pin title overlay)
-Bottom safe: 100px (save button area)
-Logo/branding: bottom 100px or top-left corner
+Keep ~80px clear top and bottom (Save button and icons overlay the corners)
+Logo/branding: small, bottom-center or top-left
+Headline readable at ~236px feed width
 ```
 
 ---
@@ -164,7 +194,7 @@ Logo/branding: bottom 100px or top-left corner
 - Warm, approachable design language
 - Photo-centric with overlay text
 - Event and community-focused layouts
-- Cover photos should tell a story without text (text < 20% of area)
+- Cover photos should work with little or no text (the old "20% text rule" was retired in 2020, but text-light images still tend to perform better)
 - Groups and communities prefer authentic over polished
 
 ### Pinterest
@@ -348,9 +378,9 @@ For multi-slide carousels, maintain consistency:
 
 ---
 
-## Step 8: Output Production-Ready Code
+## Step 8: Code Output Path
 
-Generate the graphic as a self-contained HTML file. Include:
+When using code instead of Gemini, generate a self-contained HTML file. Include:
 
 1. Correct `width` and `height` on the canvas element
 2. Google Fonts loaded via `<link>` tag
@@ -362,12 +392,12 @@ Generate the graphic as a self-contained HTML file. Include:
 
 Include a comment in the output:
 ```html
-<!-- To export as an image:
-     1. Open this file in a browser
-     2. Use browser DevTools > screenshot (Cmd+Shift+P > "Capture node screenshot")
-     3. Or use a tool like html2canvas, Puppeteer, or Screenshot API
-     4. Verify dimensions match the target platform -->
+<!-- To export as an image (body margin must be 0):
+     chromium --headless --hide-scrollbars --window-size=1080,1080 --screenshot=post.png post.html
+     Or DevTools > Cmd+Shift+P > "Capture node screenshot" -->
 ```
+
+After exporting, Read the PNG and check it the same way as a Gemini output.
 
 ---
 
@@ -380,4 +410,5 @@ Include a comment in the output:
 - [ ] Visual hierarchy is clear -- one focal point
 - [ ] No text-heavy areas (social graphics are visual-first)
 - [ ] CTA or action prompt is included where appropriate
-- [ ] Code is self-contained with no external dependencies except fonts
+- [ ] Output PNG was Read: every word spelled correctly, legible at phone size
+- [ ] Code output (if used) is self-contained except fonts

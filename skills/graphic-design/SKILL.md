@@ -1,9 +1,12 @@
 ---
 name: graphic-design
 description: >
-  Core graphic design skill for generating eye-catching visuals via Gemini 3.1 Flash image
-  generation and/or HTML/CSS/SVG code. Covers composition, color theory, typography treatment,
-  prompt engineering for AI image generation, and advanced CSS techniques.
+  Core graphic design skill for one-off visuals via Gemini 3.1 Flash image generation and/or
+  HTML/CSS/SVG code. Covers composition, color theory, typography, prompt crafting, exact-size
+  cropping, output verification, text-overlay fallback, and advanced CSS techniques. Use for
+  general or custom-size graphics that don't fit a specific format; for platform formats prefer
+  the sibling skill (social-media-graphic, poster-design, thumbnail-design, ad-creative-design,
+  banner-design, product-mockup, infographic).
   Trigger phrases: "design a graphic", "create a visual", "make a graphic",
   "design an image", "create artwork", "generate a graphic", "visual design".
 license: MIT
@@ -24,9 +27,8 @@ Choose AI generation for social posts, posters, ads, and rich visuals. Choose co
 
 Before any design work:
 
-1. Read `.agents/design-context.md` for brand colors, fonts, style archetype
-2. If no context exists, ask the user to run the `design-context` skill or proceed with defaults
-3. Extract: primary color, secondary color, accent, heading font, body font, design style
+1. Read `.agents/design-context.md` first. Extract primary, secondary, and accent colors (hex), heading and body fonts, and style archetype
+2. If the file doesn't exist, use the Default Fallbacks from `design-context` and tell the user the output uses defaults. Suggest running `design-context` for on-brand results
 
 ---
 
@@ -53,81 +55,82 @@ Identify required elements:
 
 ---
 
-## Step 2b: Gemini Image Generation Path
-
-When generating graphics as images (not code), use Gemini 3.1 Flash Image Preview:
-
-### Craft the Prompt
-
-Build a structured prompt from the brief. **Describe the scene narratively — don't just list keywords.**
-
-**Prompt template:**
-```
-Create a [style] [format] for [purpose].
-
-Scene: [Describe the composition — what's in the foreground, background, how elements are arranged]
-Style: [Design style — minimalist, bold, luxurious, retro, etc.]
-Colors: [Specific colors from brand context — "navy blue #1a2b4a background with coral #ff6b6b accents"]
-Typography: [Describe text treatment — "large bold sans-serif headline reading '[TEXT]' in white"]
-Mood: [Emotional tone — energetic, calm, professional, playful]
-Details: [Specific design elements — gradients, geometric shapes, textures, shadows]
-```
-
-### With a Product Image
-
-Pass the product image + prompt to Gemini. See `image-generation` skill for full API details and CLI usage.
-
-**Example prompt for product image editing:**
-> Place this product on a bold gradient background (#1a2b4a to #ff6b6b). Add a large headline 'NEW ARRIVAL' in white bold sans-serif at the top. Add geometric accent shapes. Eye-catching for Instagram (1:1).
-
-### Prompt Engineering for Design Quality
-
-| Technique | Example |
-|-----------|---------|
-| **Specify style explicitly** | "flat vector illustration style" not "nice looking" |
-| **Name colors with hex codes** | "deep navy #0a1628 background" not "dark background" |
-| **Describe spatial layout** | "product centered in lower third, text in upper third" |
-| **Reference design movements** | "Swiss/International style grid layout" |
-| **Describe typography style** | "bold geometric sans-serif, tightly tracked" not "nice font" |
-| **Include lighting/texture** | "soft gradient lighting from top-left, subtle noise texture" |
-| **Specify what NOT to include** | "no borders, no drop shadows, no clip art" |
-
-### Iterative Refinement
-
-Use multi-turn chat (see `image-generation` skill) to refine: adjust colors, reposition elements, change text, add/remove details. Each refinement builds on the previous result.
-
----
-
-## Step 3: Analyze Product Image (If Provided)
-
-When the user provides a product image:
+## Step 2b: Analyze Product Image (If Provided)
 
 1. **Identify dominant colors** -- extract 3-5 key colors from the image
 2. **Assess composition** -- where is the subject, where is negative space
 3. **Determine mood** -- warm/cool, energetic/calm, luxurious/casual
-4. **Plan integration** -- how the image fits into the overall graphic layout
-5. **Choose complement strategy:**
-   - Harmonious: use colors from the image in the background/text
-   - Contrasting: use complementary colors to make the image pop
-   - Monochromatic: desaturate and overlay with brand color
+4. **Choose complement strategy:** harmonious (reuse image colors), contrasting (complementary colors make it pop), or monochromatic (desaturate + brand-color overlay)
+
+---
+
+## Step 3: Gemini Image Generation Path (Default)
+
+Use this path unless the output must be editable HTML, animated, or carry long/exact copy (then use Step 7). API and CLI details live in `image-generation`; this is the design layer. Fold in the composition, color, and typography decisions from Steps 4-6.
+
+### Craft the Prompt
+
+**Describe the scene narratively -- don't just list keywords.** Put exact copy in double quotes, use hex codes, describe spatial layout, name the style, and state exclusions (full checklist: `image-generation` Step 2).
+
+```
+Create a [style] [format] for [purpose].
+Scene: [foreground, background, how elements are arranged]
+Colors: ["navy blue #1a2b4a background with coral #ff6b6b accents"]
+Typography: [large bold sans-serif headline "[TEXT]" in white, upper third]
+Mood: [energetic, calm, professional, playful]
+Exclude: [no borders, no clip art, no extra text]
+```
+
+**With a product image**, pass it via `--image product.png`:
+> Place this product on a bold gradient background (#1a2b4a to #ff6b6b). Keep the product, its label and logo exactly as in the photo. Add a large headline "NEW ARRIVAL" in white bold sans-serif at the top. Add geometric accent shapes.
+
+### Pick a Supported Aspect Ratio, Then Crop to Exact Pixels
+
+Gemini only outputs `1:1, 2:3, 3:2, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9, 21:9, 1:4, 4:1, 1:8, 8:1` -- never put pixel sizes in the prompt and expect them honored. For any other target (1200x628, 300x250, A4), generate at the nearest ratio and let `--resize` center-crop + resize:
+
+```bash
+python tools/gemini-generate.py --prompt-file prompt.txt --aspect-ratio 16:9 --size 2K \
+  --resize 1200x628 --output graphic.png
+```
+
+- Tell Gemini to keep text and key subjects inside the area that survives the crop ("keep all text within the central 80%")
+- `--size 2K` for screen, `4K` for print or large placements
+- Several sizes from one master: generate once without `--resize`, then per size (Pillow): `from PIL import Image, ImageOps; ImageOps.fit(Image.open("master.png"), (w, h), Image.LANCZOS).save(out)`
+
+### Verify, Then Refine
+
+Never deliver an image you haven't looked at:
+
+1. **Read the output PNG.** Check: every word spelled exactly as briefed, text legible at the size it will be seen, brand colors correct, one clear focal point, nothing important in cropped or UI-overlaid zones, product/logo not distorted
+2. **Fix one issue per turn** -- `--image graphic.png --prompt 'Change "EVERYTHNG" to "EVERYTHING". Change nothing else.'` -- and Read the result again
+3. **After two failed text fixes**, regenerate with "no text, leave the upper third clear" and add the copy as a code overlay:
+
+```html
+<style>body{margin:0}</style>
+<div class="canvas" style="width:1200px;height:628px;position:relative;background:url('visual.png') center/cover;">
+  <h1 class="headline" style="position:absolute;left:64px;top:56px;max-width:60%;color:#fff;">NEW ARRIVAL</h1>
+</div>
+```
+```bash
+chromium --headless --hide-scrollbars --window-size=1200,628 --screenshot=final.png overlay.html
+```
+
+Then Read `final.png` to confirm.
 
 ---
 
 ## Step 4: Apply Composition Principles
 
 ### Rule of Thirds
-Divide the canvas into a 3x3 grid. Place key elements at intersection points.
+Divide the canvas into a 3x3 grid. Center key elements on the four line intersections (33%/67%), not in the middle cell.
 
 ```css
-/* Visual guide for rule of thirds placement */
-.canvas {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  grid-template-rows: 1fr 1fr 1fr;
-}
+/* Focal point centered on the upper-left power point */
 .focal-point {
-  grid-column: 2;
-  grid-row: 1 / 3; /* Upper-center area for primary content */
+  position: absolute;
+  left: 33.33%;
+  top: 33.33%;
+  transform: translate(-50%, -50%);
 }
 ```
 
@@ -212,7 +215,7 @@ animation: gradientShift 8s ease infinite;
 /* Display headline -- the main event */
 .headline {
   font-family: var(--font-heading);
-  font-size: clamp(2.5rem, 6vw, 5rem);
+  font-size: clamp(2.5rem, 8cqw, 5rem); /* cqw = % of .canvas width, not the browser window */
   font-weight: 800;
   line-height: 1.05;
   letter-spacing: -0.02em;
@@ -248,11 +251,11 @@ animation: gradientShift 8s ease infinite;
 
 ---
 
-## Step 7: Generate the Graphic
+## Step 7: Code Output Path
 
 ### Output Structure
 
-Always generate as a self-contained HTML file with embedded CSS:
+When the code path is chosen (editable, animated, or text-heavy output), generate a self-contained HTML file with embedded CSS. Render it to PNG at exact size with headless Chromium (see Step 3) and Read the screenshot before delivering:
 
 ```html
 <!DOCTYPE html>
@@ -271,6 +274,7 @@ Always generate as a self-contained HTML file with embedded CSS:
       height: [HEIGHT]px;
       position: relative;
       overflow: hidden;
+      container-type: inline-size; /* enables cqw units inside */
       /* Background, gradients, etc. */
     }
 
@@ -346,121 +350,40 @@ Use inline `<svg>` with `<filter>` for noise (`feTurbulence` + `feColorMatrix` +
 
 ## Step 8: Style-Specific Frameworks
 
-### Minimalist
-```css
-.minimalist-canvas {
-  background: #FAFAFA;
-  padding: 60px;
-}
-.minimalist-canvas .headline {
-  font-size: 3rem;
-  font-weight: 300;
-  color: #171717;
-  letter-spacing: -0.03em;
-}
-/* Single accent color, generous whitespace, thin rules */
-/* Use negative space as a design element */
-/* Max 2 colors plus neutrals */
-```
+Starting points for the code path; for Gemini, translate the same cues into the prompt (see `image-generation` style patterns).
 
-### Bold / Vibrant
 ```css
-.bold-canvas {
-  background: linear-gradient(135deg, #FF6B6B, #FFE66D);
-}
-.bold-canvas .headline {
-  font-size: 5rem;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: -0.04em;
-}
-/* Saturated gradients, oversized type, geometric overlays */
-/* High contrast, thick borders, strong shadows */
-```
+/* Minimalist: single accent, generous whitespace, thin rules, max 2 colors + neutrals */
+.minimalist-canvas { background: #FAFAFA; padding: 60px; }
+.minimalist-canvas .headline { font-size: 3rem; font-weight: 300; color: #171717; letter-spacing: -0.03em; }
 
-### Luxurious
-```css
-.luxury-canvas {
-  background: #0A0A0A;
-  color: #F5F0E8;
-}
-.luxury-canvas .headline {
-  font-family: 'Playfair Display', serif;
-  font-size: 3.5rem;
-  font-weight: 400;
-  letter-spacing: 0.05em;
-}
-.luxury-canvas .accent {
-  color: #D4AF37; /* Gold */
-  border: 1px solid rgba(212, 175, 55, 0.3);
-}
-/* Dark backgrounds, gold/silver accents, serif fonts */
-/* Subtle gradients, thin lines, refined spacing */
-```
+/* Bold / Vibrant: saturated gradients, oversized type, geometric overlays */
+.bold-canvas { background: linear-gradient(135deg, #FF6B6B, #FFE66D); }
+.bold-canvas .headline { font-size: 5rem; font-weight: 900; text-transform: uppercase; letter-spacing: -0.04em; }
 
-### Playful
-```css
-.playful-canvas {
-  background: #FFF8F0;
-  border-radius: 24px;
-}
-.playful-canvas .headline {
-  font-family: 'Fredoka One', cursive;
-  font-size: 3rem;
-  color: #FF6B6B;
-  transform: rotate(-2deg);
-}
-/* Bright colors, rounded everything, hand-drawn feel */
-/* Bouncy animations, emoji accents, organic shapes */
-```
+/* Luxurious: dark ground, gold accents, serif, refined spacing */
+.luxury-canvas { background: #0A0A0A; color: #F5F0E8; }
+.luxury-canvas .headline { font-family: 'Playfair Display', serif; font-size: 3.5rem; font-weight: 400; letter-spacing: 0.05em; }
+.luxury-canvas .accent { color: #D4AF37; border: 1px solid rgba(212, 175, 55, 0.3); }
 
-### Corporate
-```css
-.corporate-canvas {
-  background: #FFFFFF;
-  font-family: 'Inter', sans-serif;
-}
-.corporate-canvas .headline {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #1E3A5F;
-}
-/* Blue/gray palette, structured 12-column grid */
-/* Professional photography, clean data presentation */
-```
+/* Playful: bright colors, rounded everything, organic shapes */
+.playful-canvas { background: #FFF8F0; border-radius: 24px; }
+.playful-canvas .headline { font-family: 'Fredoka', sans-serif; font-size: 3rem; color: #E03E3E; transform: rotate(-2deg); }
 
-### Retro
-```css
-.retro-canvas {
-  background: #F4E8C1;
-  color: #2D1B00;
-}
-.retro-canvas .headline {
-  font-family: 'Playfair Display', serif;
-  font-size: 4rem;
-  font-weight: 900;
-}
-/* Halftone overlay with SVG filter, warm palette */
-/* Vintage color: #C84B31, #2D1B00, #F4E8C1, #ECDBBA */
-/* Distressed textures, stamp effects */
-```
+/* Corporate: blue/gray palette, structured 12-column grid, clean data */
+.corporate-canvas { background: #FFFFFF; font-family: 'Inter', sans-serif; }
+.corporate-canvas .headline { font-size: 2.5rem; font-weight: 700; color: #1E3A5F; }
 
-### Brutalist
-```css
-.brutalist-canvas {
-  background: #FFFFFF;
-  border: 4px solid #000000;
-}
+/* Retro: warm palette #C84B31 #2D1B00 #F4E8C1 #ECDBBA, halftone (SVG), distressed texture */
+.retro-canvas { background: #F4E8C1; color: #2D1B00; }
+.retro-canvas .headline { font-family: 'Playfair Display', serif; font-size: 4rem; font-weight: 900; }
+
+/* Brutalist: B&W, raw borders, monospace, visible grid, overlapping elements */
+.brutalist-canvas { background: #FFFFFF; border: 4px solid #000000; }
 .brutalist-canvas .headline {
-  font-family: 'Space Mono', monospace;
-  font-size: 4rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  mix-blend-mode: difference;
+  font-family: 'Space Mono', monospace; font-size: 4rem; font-weight: 700; text-transform: uppercase;
+  color: #FFFFFF; mix-blend-mode: difference; /* white + difference = black on white, inverts over black blocks */
 }
-/* High contrast B&W, raw borders, monospace type */
-/* Overlapping elements, unconventional alignment */
-/* Visible grid, exposed structure */
 ```
 
 ---
@@ -472,10 +395,11 @@ Before delivering any graphic, verify:
 - [ ] Colors match the design-context palette
 - [ ] Typography uses specified fonts (loaded via Google Fonts if needed)
 - [ ] Clear visual hierarchy -- eye knows where to look first
-- [ ] Text is readable -- sufficient contrast ratio (4.5:1 minimum for body, 3:1 for large text)
+- [ ] Text contrast meets WCAG 2.x: 4.5:1 for normal text, 3:1 for large text (>=24px, or >=18.66px bold) and for UI shapes like CTA buttons
 - [ ] Proper spacing -- nothing feels cramped
 - [ ] Dimensions match the requested size
-- [ ] Code is self-contained -- no external dependencies except fonts
+- [ ] Generated images: output PNG was Read and every word checked; crop to exact pixels done
+- [ ] Code output: self-contained (fonts excepted), rendered screenshot Read and checked
 - [ ] Decorative elements enhance, not distract
 - [ ] The design matches the intended style archetype
 - [ ] All text content is accurate and spelled correctly

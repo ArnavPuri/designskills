@@ -1,9 +1,12 @@
 ---
 name: ad-creative-design
 description: >
-  Ad banners and display ad creative design via AI image generation and code generation.
-  Covers IAB standard sizes, CTA design, value proposition hierarchy, A/B variations,
-  and HTML5 animated ads. Supports Gemini 3.1 Flash Image Preview.
+  Paid advertising creative: IAB display banners (300x250, 728x90, etc.), Google Display and
+  Performance Max assets, and paid social ads (Meta, LinkedIn, X), via Gemini 3.1 Flash image
+  generation, HTML/CSS, or HTML5 animated ads. Covers exact-size cropping, CTA design, value
+  proposition hierarchy, A/B variations, and platform ad specs. Use whenever the creative will
+  be bought as ad inventory; for organic posts use social-media-graphic, for on-site hero or
+  email banners use banner-design.
   Trigger phrases: "design an ad", "create a banner ad", "display ad",
   "ad creative", "Google Display ad", "Meta ad", "ad banner",
   "create ad variations", "HTML5 ad".
@@ -12,27 +15,31 @@ license: MIT
 
 # Ad Creative Design
 
-Design high-converting ad banners and display creatives. Covers all standard IAB sizes, platform requirements, CTA optimization, and A/B testing frameworks. Output as production-ready HTML/CSS with optional animation.
+Design high-converting ad banners and display creatives. Covers all standard IAB sizes, platform requirements, CTA optimization, and A/B testing frameworks. Output as a Gemini-generated image cropped to exact size, or HTML/CSS (with optional animation) when copy must be pixel-sharp at small sizes.
 
 ---
 
 ## Step 1: Load Design Context
 
-1. Read `.agents/design-context.md` for brand colors, fonts, style
-2. If missing, ask user to run `design-context` skill or use defaults
+1. Read `.agents/design-context.md` first -- brand colors (hex), fonts, style archetype
+2. If missing, use the `design-context` Default Fallbacks and tell the user defaults were used
 3. Ad creatives must be strictly on-brand -- ads are often the first brand touchpoint
 
 ---
 
-## Gemini 3.1 Flash Image Preview
+## Gemini Image Generation Path
 
-For AI image generation, see the `image-generation` skill for the full Gemini pipeline. Below are domain-specific prompt patterns for this skill.
+Pipeline/CLI: `image-generation`. Prompt craft, cropping, and text-overlay fallback: `graphic-design` Step 3.
+
+1. IAB sizes are not Gemini ratios. Generate at the Gemini ratio in the Step 2 table, then `--resize WxH` (e.g. `--aspect-ratio 5:4 --resize 300x250`)
+2. **Small formats (728x90, 320x50, 160x600, 300x250):** downscaled AI text blurs and misspells. Generate the visual/background only ("no text"), then set headline + CTA in HTML/CSS over it and screenshot at exact size. For multi-size sets, generate one master per ratio family and crop from it
+3. Read every output PNG at 100%: check spelling, offer details (prices, %, dates), CTA legibility, logo fidelity. Fix one issue per follow-up turn
 
 ### Example Prompts
 
-- **Display Ad:** "Create a display ad ([size]). [product/service] visual on [background]. Headline '[text]' in [style]. CTA button '[action]' in [color]. Clean, conversion-focused layout."
-- **Social Ad:** "Create a Meta feed ad (1080x1080). [product] photo centered on [background color]. Short headline '[value prop]' above. CTA '[action]' button at bottom in [brand color]. Minimal text, bold imagery."
-- **Retargeting Banner:** "Create a 728x90 leaderboard ad. Logo left, '[offer headline]' center in [font-weight] [font-family], CTA '[action]' right in [accent color] pill button. [brand color] background. Urgency-driven."
+- **Display Ad:** "Create a [square/wide/tall] display ad. [product/service] visual on [background]. Headline '[text]' in [style]. CTA button '[action]' in [color]. Clean, conversion-focused layout."
+- **Social Ad:** "Create a square Meta feed ad. [product] photo centered on [background color]. Short headline '[value prop]' above. CTA '[action]' button at bottom in [brand color]. Minimal text, bold imagery."
+- **Retargeting Banner:** "Create an ultra-wide leaderboard ad background (8:1), no text; leave the center clear for copy. Logo left, '[offer headline]' center in [font-weight] [font-family], CTA '[action]' right in [accent color] pill button. [brand color] background. Urgency-driven."
 
 ---
 
@@ -40,28 +47,30 @@ For AI image generation, see the `image-generation` skill for the full Gemini pi
 
 ### Standard IAB Ad Sizes
 
-| Name | Dimensions | Type | Performance |
-|------|-----------|------|-------------|
-| Medium Rectangle | 300 x 250 | Display | Highest inventory |
-| Large Rectangle | 336 x 280 | Display | High performance |
-| Leaderboard | 728 x 90 | Display | Top of page |
-| Mobile Leaderboard | 320 x 50 | Mobile | Mobile standard |
-| Large Mobile | 320 x 100 | Mobile | Better engagement |
-| Wide Skyscraper | 160 x 600 | Display | Sidebar |
-| Half Page | 300 x 600 | Display | High impact |
-| Billboard | 970 x 250 | Display | Premium placement |
-| Large Leaderboard | 970 x 90 | Display | Wide format |
-| Square | 250 x 250 | Display | Compact |
+| Name | Dimensions | Type | Performance | Gemini ratio -> `--resize` |
+|------|-----------|------|-------------|---------------------------|
+| Medium Rectangle | 300 x 250 | Display | Highest inventory | 5:4 -> 300x250 |
+| Large Rectangle | 336 x 280 | Display | High performance | 5:4 -> 336x280 |
+| Leaderboard | 728 x 90 | Display | Top of page | 8:1 -> 728x90 |
+| Mobile Leaderboard | 320 x 50 | Mobile | Mobile standard | 8:1 -> 320x50 |
+| Large Mobile | 320 x 100 | Mobile | Better engagement | 4:1 -> 320x100 |
+| Wide Skyscraper | 160 x 600 | Display | Sidebar | 1:4 -> 160x600 |
+| Half Page | 300 x 600 | Display | High impact | 9:16 -> 300x600 |
+| Billboard | 970 x 250 | Display | Premium placement | 4:1 -> 970x250 |
+| Large Leaderboard | 970 x 90 | Display | Wide format | 8:1 -> 970x90 |
+| Square | 250 x 250 | Display | Compact | 1:1 -> 250x250 |
+
+Export static ads at 2x (e.g. 600x500 for 300x250) only if the ad server accepts high-DPI assets; otherwise deliver exact size and stay under the file-size cap.
 
 ### Social Ad Sizes
 
 | Platform | Format | Dimensions |
 |----------|--------|-----------|
-| Meta (Feed) | Single Image | 1080 x 1080 or 1200 x 628 |
-| Meta (Story) | Full Screen | 1080 x 1920 |
-| Google Display | Responsive | Multiple (provide assets) |
-| LinkedIn | Sponsored Content | 1200 x 627 |
-| Twitter/X | Promoted | 1200 x 675 |
+| Meta (Feed) | Single Image | 1080 x 1350 (4:5, best on mobile) or 1080 x 1080 |
+| Meta (Stories/Reels) | Full Screen | 1080 x 1920 (9:16) |
+| Google Responsive Display / PMax | Asset set | Landscape 1200 x 628, square 1200 x 1200, portrait 960 x 1200; logos 1200 x 1200 and 1200 x 300; 5MB max each |
+| LinkedIn | Sponsored Content | 1200 x 627 or 1080 x 1080 |
+| Twitter/X | Promoted | 1200 x 675 or 1080 x 1080 |
 
 ---
 
@@ -207,16 +216,19 @@ Label each variation clearly in the output:
 ## Step 8: Platform-Specific Requirements
 
 ### Google Display Network
-- File size: max 150KB (HTML5), images under 150KB each
-- Animation: max 30 seconds, max 3 loops
-- Must include a visible border (1px solid #ccc if background is white)
+- File size: max 150KB for static uploaded image ads and zipped HTML5 bundles
+- Animation: must stop within 30 seconds total (loops included)
+- Ads with a white or very light background need a visible border so they're distinguishable from the page
+- HTML5 ads need `<meta name="ad.size" content="width=300,height=250">` in `<head>`
 - Click area must cover the entire ad
 - No auto-playing audio
 
 ### Meta (Facebook/Instagram) Ads
-- Text on image: keep under 20% of the image area (not enforced but affects delivery)
-- Primary text: 125 characters
-- Headline: 40 characters
+- Text on image: the 20% text rule was retired in 2020 and is not enforced; still keep image text short -- the headline and primary text fields carry the copy
+- Primary text: ~125 characters before truncation
+- Headline: ~40 characters before truncation
+- 9:16 safe zones (1080x1920): Stories -- keep text/logos out of the top and bottom ~14% (250px); Reels -- top ~14% and bottom ~35% (670px), ~6% from the sides
+- Google Responsive Display: logo and text on images are discouraged -- Google overlays your headlines; supply clean imagery
 - Square (1:1) and vertical (4:5) perform best on mobile
 - Video thumbnails follow same rules
 
@@ -236,8 +248,9 @@ Label each variation clearly in the output:
 <script>
 var clickTag = "https://example.com";
 </script>
-<a href="javascript:void(window.open(clickTag))" style="position:absolute;inset:0;z-index:999;">
+<a href="javascript:void(window.open(window.clickTag))" style="position:absolute;inset:0;z-index:999;">
 </a>
+<!-- Parent .ad must be position: relative. The ad server replaces clickTag; never hard-code a tracking URL. -->
 ```
 
 ---
@@ -251,7 +264,7 @@ var clickTag = "https://example.com";
 **Multi-frame rotation**: Position frames absolutely, use a shared `@keyframes frame` with opacity in/out, stagger by `total-duration / num-frames`. Max 3 frames over 10-15s.
 
 ### Animation Guidelines
-- Total animation: 15-30 seconds max, max 3 loops
+- Total animation: 30 seconds max including loops (e.g. a 10s sequence x 3 loops)
 - End on a static frame with CTA visible
 - No more than 3 frames/scenes
 - Avoid fast flashing (accessibility)
@@ -261,23 +274,24 @@ var clickTag = "https://example.com";
 
 ## Step 10: Ad Border and Container
 
-Every display ad needs a clear boundary:
+Give every display ad a clear boundary (required when the background is white or very light):
 
-- `border: 1px solid #E5E7EB; border-radius: 0; overflow: hidden; position: relative;`
+- `border: 1px solid #CCCCCC; border-radius: 0; overflow: hidden; position: relative; box-sizing: border-box;` (border-box keeps the ad at exact IAB size)
 - Full-bleed click area: `position: absolute; inset: 0; z-index: 100; cursor: pointer;`
 
 ---
 
 ## Quality Checklist
 
-- [ ] Dimensions exactly match the target ad size
+- [ ] Dimensions exactly match the target ad size (Gemini output cropped with `--resize`)
+- [ ] Output PNG / screenshot was Read at 100%: copy, prices, and CTA spelled right and legible
 - [ ] Clear visual hierarchy: Visual > Headline > CTA
 - [ ] CTA is prominent and clearly clickable
 - [ ] Copy is concise and within character limits
 - [ ] Brand colors and fonts from design-context
-- [ ] 1px border present (required for display ads)
+- [ ] Visible border on white/light-background display ads
 - [ ] File size is reasonable (aim for under 150KB total)
 - [ ] Animation (if any) ends on a static frame with visible CTA
 - [ ] At least 2 variations provided for A/B testing
 - [ ] No text below 10px font size
-- [ ] Sufficient contrast ratios for accessibility
+- [ ] Contrast: 4.5:1 for normal text, 3:1 for large text (>=24px or >=18.66px bold) and for the CTA button against its surroundings

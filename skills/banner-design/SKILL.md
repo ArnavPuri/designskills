@@ -1,12 +1,15 @@
 ---
 name: banner-design
 description: >
-  Website banners, email headers, event banners, and hero sections via AI image
-  generation and code generation. Covers standard sizes, animated and static approaches,
-  CTA placement, and responsive techniques. Supports Gemini 3.1 Flash Image Preview.
-  Trigger phrases: "design a banner", "create a website banner", "hero banner",
+  Banner graphics for owned channels: website hero/section banner images, email header
+  images, event and conference banners, sidebar house promos, and announcement bars, via
+  Gemini 3.1 Flash image generation (default) or HTML/CSS. Covers standard sizes, Gemini
+  ratios and cropping, CTA placement, responsive art direction, and email constraints. For
+  paid display/IAB ads use ad-creative-design; for a coded above-the-fold section use
+  hero-section; for a full email template use email-design.
+  Trigger phrases: "design a banner", "create a website banner", "hero banner image",
   "email header", "event banner", "promotional banner", "web banner",
-  "banner ad", "sidebar banner", "create a hero section".
+  "sidebar banner", "announcement bar", "Eventbrite banner".
 license: MIT
 ---
 
@@ -18,21 +21,26 @@ Design website banners, email headers, event banners, and hero sections. Covers 
 
 ## Step 1: Load Design Context
 
-1. Read `.agents/design-context.md` for brand colors, fonts, style
-2. If missing, ask user to run `design-context` skill or use defaults
+1. Read `.agents/design-context.md` first -- brand colors (hex), fonts, style archetype
+2. If missing, use the `design-context` Default Fallbacks and tell the user defaults were used
 3. Banners are high-visibility brand touchpoints -- strict adherence to brand guidelines
 
 ---
 
-## Gemini 3.1 Flash Image Preview
+## Gemini Image Generation Path
 
-For AI image generation, see the `image-generation` skill for the full Gemini pipeline. Below are domain-specific prompt patterns for this skill.
+Pipeline/CLI: `image-generation`. Prompt craft, cropping, and text-overlay fallback: `graphic-design` Step 3.
+
+1. Generate at the Gemini ratio in the Step 2 tables, then `--resize WxH` (e.g. `--aspect-ratio 21:9 --resize 1440x600`). Export web/email banners at 2x (e.g. 2880x1200, 1200x400) and display at 1x for sharp retina rendering
+2. Web heroes crop differently per breakpoint: keep the subject centered with clear space for text, or generate a separate 4:5 mobile version
+3. For web and email, prefer generating the visual without text and setting headline + CTA as live HTML text (accessible, editable, and still visible when email images are blocked)
+4. Read the output PNG: check spelling, legibility at the displayed size, and that the text area is clean. Fix one issue per follow-up turn
 
 ### Example Prompts
 
-- **Hero Banner:** "Create a website hero banner (1440x600) for [brand]. [product/service] visual on the right, headline '[text]' on the left in [font-style]. [color] gradient background. CTA button '[action]'. Modern, bold layout."
-- **Email Header:** "Create an email header banner (600x200) for [brand]. [campaign theme] with [color palette]. Logo centered at top, headline '[text]' below. Simple, clean design that renders in all email clients."
-- **Event Banner:** "Create an event banner (1200x400) for [event name]. [style] background with [decorative elements]. Event name '[text]' prominently displayed. Date '[date]' and location '[venue]' below. [mood/tone]."
+- **Hero Banner:** "Create a wide website hero banner for [brand]. [product/service] visual on the right, headline '[text]' on the left in [font-style]. [color] gradient background. CTA button '[action]'. Modern, bold layout."
+- **Email Header:** "Create a wide email header banner for [brand]. [campaign theme] with [color palette]. Logo centered at top, headline '[text]' below. Simple, clean design that renders in all email clients."
+- **Event Banner:** "Create a wide event banner for [event name]. [style] background with [decorative elements]. Event name '[text]' prominently displayed. Date '[date]' and location '[venue]' below. [mood/tone]."
 
 ---
 
@@ -40,33 +48,33 @@ For AI image generation, see the `image-generation` skill for the full Gemini pi
 
 ### Website Banners
 
-| Type | Dimensions | Use Case |
-|------|-----------|----------|
-| Hero Banner (Full Width) | 1440 x 600 | Homepage hero, above the fold |
-| Hero Banner (Tall) | 1440 x 800 | Full-viewport hero section |
-| Section Banner | 1440 x 400 | Interior page section divider |
-| Sidebar Banner | 300 x 250 or 300 x 600 | Sidebar promotion |
+| Type | Dimensions | Gemini ratio | Use Case |
+|------|-----------|--------------|----------|
+| Hero Banner (Full Width) | 1440 x 600 | 21:9 | Homepage hero, above the fold |
+| Hero Banner (Tall) | 1440 x 800 | 16:9 | Full-viewport hero section |
+| Section Banner | 1440 x 400 | 4:1 | Interior page section divider |
+| Sidebar Banner | 300 x 250 or 300 x 600 | 5:4 / 9:16 | House promo (paid placements: ad-creative-design) |
 | Notification Bar | Full width x 48px | Top-of-page announcement |
 | Cookie/Consent Bar | Full width x 80px | Bottom notification |
 
 ### Email Banners
 
-| Type | Dimensions | Notes |
-|------|-----------|-------|
-| Email Header | 600 x 200 | Standard email width |
-| Email Hero | 600 x 300 | Full-width email hero |
-| Email Banner | 600 x 150 | Compact promotional |
+| Type | Dimensions | Gemini ratio | Notes |
+|------|-----------|--------------|-------|
+| Email Header | 600 x 200 | 21:9 | Standard email width |
+| Email Hero | 600 x 300 | 16:9 | Full-width email hero |
+| Email Banner | 600 x 150 | 4:1 | Compact promotional |
 
-Email constraints: max 600px wide, use tables for layout, inline CSS only, no web fonts (fallback to system fonts), images must have alt text.
+Email constraints: 600px wide (up to ~640), tables for layout, inline CSS, web fonts only render in some clients (Apple Mail, iOS) so always declare an Arial/Helvetica fallback, every image needs alt text, and key copy should be live text because many clients block images by default.
 
 ### Event / Promotional Banners
 
-| Type | Dimensions | Use Case |
-|------|-----------|----------|
-| Event Banner (Wide) | 1200 x 400 | Event page header |
-| Meetup Banner | 1200 x 675 | Meetup.com event cover |
-| Eventbrite Banner | 2160 x 1080 | Eventbrite event cover |
-| Conference Banner | 1920 x 600 | Conference website hero |
+| Type | Dimensions | Gemini ratio | Use Case |
+|------|-----------|--------------|----------|
+| Event Banner (Wide) | 1200 x 400 | 21:9 | Event page header |
+| Meetup Banner | 1200 x 675 | 16:9 | Meetup.com event cover |
+| Eventbrite Banner | 2160 x 1080 | 16:9 | Eventbrite event cover (2:1) |
+| Conference Banner | 1920 x 600 | 4:1 | Conference website hero |
 
 ---
 
@@ -107,11 +115,12 @@ Use a flex container (`gap: 16px; flex-wrap: wrap`). Primary CTA: solid brand-co
 
 ### Animation Techniques
 
-- **Parallax**: Absolute-positioned bg with `inset: -20%`, `transform: translateZ(-1px) scale(1.5)`
+- **Parallax**: scroll container with `perspective: 1px; height: 100vh; overflow-y: auto`; background layer `transform: translateZ(-1px) scale(2)` (scale = 1 + depth / perspective)
 - **Animated gradient**: `background-size: 600% 600%`, animate `background-position` over 12s
 - **Floating shapes**: Absolute circles at 0.08 opacity, each with unique translate/rotate keyframes (7-10s duration)
 - **Text reveal**: Wrap words in `<span>` with `inline-block`, animate `translateY(100%) -> 0` with staggered 0.1s delays
 - **Typing effect**: `white-space: nowrap; width: 0`, animate width with `steps()`, add blinking cursor via `border-right`
+- Wrap all motion in `@media (prefers-reduced-motion: no-preference)` and keep the headline readable in the first frame
 
 ---
 
@@ -192,11 +201,12 @@ Use table-based layout, max 600px, inline styles only. Font: `Arial, Helvetica, 
 
 ## Quality Checklist
 
-- [ ] Banner dimensions match the target placement
+- [ ] Banner dimensions match the target placement (Gemini output cropped with `--resize`)
+- [ ] Output PNG / rendered screenshot was Read: text spelled correctly and legible at display size
 - [ ] Clear visual hierarchy: Headline > Description > CTA
 - [ ] CTA is prominent and action-oriented
 - [ ] Brand colors and fonts from design-context applied
-- [ ] Text is readable over any background (overlay/scrim if needed)
+- [ ] Text contrast: 4.5:1 normal, 3:1 large (>=24px or >=18.66px bold), measured over the busiest part of the image (add a scrim if needed)
 - [ ] Responsive: scales well from mobile to desktop
 - [ ] Animations are smooth and not distracting
 - [ ] Load performance: CSS gradients preferred over heavy images

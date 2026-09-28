@@ -1,9 +1,11 @@
 ---
 name: thumbnail-design
 description: >
-  YouTube thumbnails, video covers, and article header images via AI image generation
-  and code generation. Optimized for high contrast, small-size readability, and
-  click-through rate. Supports Gemini 3.1 Flash Image Preview.
+  YouTube thumbnails, video/podcast/course covers, blog headers, and Open Graph (link-preview)
+  images via Gemini 3.1 Flash image generation (default) or HTML/CSS. Optimized for high
+  contrast, small-size readability, and click-through rate. Use when the image represents a
+  video, episode, or article; for feed posts use social-media-graphic, for paid ads use
+  ad-creative-design.
   Trigger phrases: "design a thumbnail", "YouTube thumbnail", "video thumbnail",
   "article header image", "OG image", "create a thumbnail", "blog header",
   "video cover image".
@@ -18,36 +20,40 @@ Create high-impact thumbnails optimized for clicks and readability at small size
 
 ## Step 1: Load Design Context
 
-1. Read `.agents/design-context.md` for brand colors, fonts, style
-2. If missing, ask user to run `design-context` skill or use defaults
+1. Read `.agents/design-context.md` first -- brand colors (hex), fonts, style archetype
+2. If missing, use the `design-context` Default Fallbacks and tell the user defaults were used
 3. Thumbnails prioritize readability and impact over strict brand guidelines -- but brand colors create channel recognition
 
 ---
 
-## Gemini 3.1 Flash Image Preview
+## Gemini Image Generation Path
 
-For AI image generation, see the `image-generation` skill for the full Gemini pipeline. Below are domain-specific prompt patterns for this skill.
+Pipeline/CLI: `image-generation`. Prompt craft, cropping, and text-overlay fallback: `graphic-design` Step 3.
+
+1. Generate at the Gemini ratio in the Step 2 table; crop with `--resize WxH` (e.g. `--aspect-ratio 16:9 --resize 1280x720`)
+2. Real people: pass their photo with `--image` and say "keep this person's face and identity unchanged". Don't invent likenesses of real people
+3. Read the output PNG, then check it shrunk: `python -c "from PIL import Image; Image.open('thumb.png').resize((168,94), Image.LANCZOS).save('thumb_small.png')"` and Read `thumb_small.png`. Text must still be readable and the face expression visible. Fix one issue per follow-up turn
 
 ### Example Prompts
 
 - **YouTube Thumbnail:** "Create a YouTube thumbnail (16:9). [subject] on the left side with [expression/pose]. Bold text '[title]' in [color] with dark outline on the right. [background style]. High contrast, readable at small size."
-- **Article Header:** "Create an article header image (1200x630). Abstract [color palette] gradient background. Title '[headline]' in bold white sans-serif, centered. Subtle geometric shapes. Clean, editorial feel."
-- **OG Image:** "Create an Open Graph image (1200x630) for [brand/site]. Logo top-left, title '[text]' large and centered, tagline below in lighter weight. [brand color] gradient background. Professional, shareable."
+- **Article Header:** "Create a landscape article header image. Abstract [color palette] gradient background. Title '[headline]' in bold white sans-serif, centered. Subtle geometric shapes. Clean, editorial feel."
+- **OG Image:** "Create a landscape Open Graph image for [brand/site]. Keep all text inside the central 80%. Logo top-left, title '[text]' large and centered, tagline below in lighter weight. [brand color] gradient background. Professional, shareable."
 
 ---
 
 ## Step 2: Identify Format and Dimensions
 
-| Format | Dimensions | Aspect Ratio | Notes |
-|--------|-----------|--------------|-------|
-| YouTube Thumbnail | 1280 x 720 | 16:9 | Must read at 168x94 in sidebar |
-| YouTube Shorts Cover | 1080 x 1920 | 9:16 | Vertical format |
-| Article Header / Hero | 1200 x 630 | 1.91:1 | Blog post header |
-| OG Image (Open Graph) | 1200 x 630 | 1.91:1 | Social share preview |
-| Twitter Card | 1200 x 675 | 16:9 | Twitter/X link preview |
-| Podcast Cover | 3000 x 3000 | 1:1 | Apple Podcasts requirement |
-| Course Thumbnail | 1280 x 720 | 16:9 | Udemy, Skillshare format |
-| Vimeo Thumbnail | 1280 x 720 | 16:9 | Same as YouTube |
+| Format | Dimensions | Aspect Ratio | Gemini ratio | Notes |
+|--------|-----------|--------------|--------------|-------|
+| YouTube Thumbnail | 1280 x 720 | 16:9 | 16:9 | Min 640px wide; JPG/PNG under 2 MB; must read at 168x94 |
+| YouTube Shorts Cover | 1080 x 1920 | 9:16 | 9:16 | Shelf shows a center crop -- keep text mid-frame |
+| Article Header / Hero | 1200 x 630 | 1.91:1 | 16:9 + crop | Blog post header |
+| OG Image (Open Graph) | 1200 x 630 | 1.91:1 | 16:9 + crop | Link previews on FB, LinkedIn, Slack, X |
+| X large-image card | 1200 x 628 | ~1.91:1 | 16:9 + crop | X can crop toward 2:1 -- keep margins |
+| Podcast Cover | 3000 x 3000 | 1:1 | 1:1 (4K) | Apple: 1400-3000px square, JPG/PNG, RGB |
+| Course Thumbnail | 1280 x 720 (Udemy min 750 x 422) | 16:9 | 16:9 | Udemy, Skillshare |
+| Vimeo Thumbnail | 1280 x 720 | 16:9 | 16:9 | Same as YouTube |
 
 ---
 
@@ -308,8 +314,8 @@ The thumbnail will appear at roughly 168x94px in the sidebar. At this size:
 - Details vanish -- keep it simple
 - The overall color scheme must be distinct from surrounding thumbnails
 
-### Bottom-Right Corner
-YouTube overlays the video duration in the bottom-right corner (dark pill with white text). Avoid placing critical content there.
+### Overlay Zones
+YouTube overlays the video duration in the bottom-right corner (dark pill with white text), a red watch-progress bar along the bottom edge for watched videos, and hover icons (Watch Later, Add to queue) in the top-right. Keep critical content out of all three.
 
 ```css
 /* Duration overlay safe zone */
@@ -336,8 +342,9 @@ Create a thumbnail system with recurring elements:
 ## Step 9: Article Header / OG Image Design
 
 ### OG Image Requirements
-- Dimensions: 1200 x 630 (recommended by most platforms)
-- File size: under 1MB for fast loading
+- Dimensions: 1200 x 630 (recommended by most platforms); declare them with `og:image:width` / `og:image:height` meta tags
+- File size: under 1MB for fast loading (platform caps are higher, e.g. 5-8MB)
+- Use an absolute HTTPS URL in `og:image`; add `twitter:card` = `summary_large_image` for X
 - Text: readable when scaled to ~600x315 (half size in some feeds)
 - Avoid text in the outer 10% margins (may be cropped)
 
@@ -424,19 +431,22 @@ Generate as self-contained HTML with fixed dimensions:
   </div>
 </body>
 </html>
-<!-- Export: Open in browser, right-click > Save as image, or use DevTools screenshot -->
+<!-- Export (window size = canvas size, so the centered canvas fills the frame exactly):
+     chromium --headless --hide-scrollbars --window-size=1280,720 --screenshot=thumb.png thumb.html -->
 ```
+
+Then Read the PNG and run the same 168x94 shrink test as for Gemini output.
 
 ---
 
 ## Quality Checklist
 
-- [ ] Readable at 168x94px (YouTube sidebar test)
+- [ ] Output PNG was Read at full size and shrunk to 168x94px -- text spelled right and readable
 - [ ] Maximum 5-7 words of text
 - [ ] 3 or fewer visual elements
 - [ ] High contrast text (stroke + shadow for safety)
 - [ ] Clear focal point that communicates the topic
-- [ ] Bottom-right corner is clear (YouTube duration badge)
+- [ ] Bottom-right corner, bottom edge, and top-right are clear (duration badge, progress bar, hover icons)
 - [ ] Colors are distinct from platform UI (avoid pure white or YouTube red)
 - [ ] Brand consistency with other thumbnails in the series
 - [ ] Emotional hook -- face, number, or curiosity element
