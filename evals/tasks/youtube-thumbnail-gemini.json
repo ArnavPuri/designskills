@@ -1,0 +1,22 @@
+{
+  "id": "youtube-thumbnail-gemini",
+  "skill": "thumbnail-design",
+  "prompt": "Make a YouTube thumbnail for Ember Coffee's video 'I Tried 12 Coffee Grinders Under $100'. Generate it with the Gemini image CLI at tools/gemini-generate.py (GEMINI_API_KEY is set; run it with --help for options). Save the final thumbnail as thumbnail.png at exactly 1280x720.",
+  "seed": {
+    ".agents/design-context.md": "evals/fixtures/design-context.md",
+    "tools/gemini-generate.py": "skills/image-generation/scripts/gemini-generate.py"
+  },
+  "requires_env": ["GEMINI_API_KEY"],
+  "budget_usd": 3,
+  "checks": [
+    {"type": "skill_loaded", "skill": "thumbnail-design", "required": true},
+    {"type": "image_size", "glob": "thumbnail.png", "width": 1280, "height": 720, "required": true}
+  ],
+  "rubric": [
+    "Readable at 168x94: three words or fewer of large text, one clear subject",
+    "Nothing important in the bottom-right corner (timestamp overlay)",
+    "High contrast and a clear emotional or curiosity hook",
+    "Any text is spelled correctly"
+  ],
+  "showcase": {"image": "thumbnail.png", "title": "YouTube thumbnail (Gemini)"}
+}

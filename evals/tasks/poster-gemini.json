@@ -1,0 +1,23 @@
+{
+  "id": "poster-gemini",
+  "skill": "poster-design",
+  "prompt": "Design a portrait poster for Ember Coffee's 'Late Night Roast' tasting event: Friday, October 17, 7-10 PM, at 214 Mercer Street. Free entry, RSVP at embercoffee.co/latenight. Generate it with the Gemini image CLI at tools/gemini-generate.py (GEMINI_API_KEY is set; run it with --help for options). Save the final poster as poster.png.",
+  "seed": {
+    ".agents/design-context.md": "evals/fixtures/design-context.md",
+    "tools/gemini-generate.py": "skills/image-generation/scripts/gemini-generate.py"
+  },
+  "requires_env": ["GEMINI_API_KEY"],
+  "budget_usd": 3,
+  "checks": [
+    {"type": "skill_loaded", "skill": "poster-design", "required": true},
+    {"type": "file_exists", "glob": "poster.png", "required": true},
+    {"type": "image_aspect", "glob": "poster.png", "ratios": ["2:3", "3:4", "4:5"], "min_width": 1000, "label": "portrait print ratio, at least 1000px wide"}
+  ],
+  "rubric": [
+    "Event name, date, time and address are all present and spelled exactly as briefed",
+    "Clear hierarchy: event name first, then date/time, then details",
+    "Readable from a distance: large type, strong contrast",
+    "On-brand warm Ember palette, organic feel"
+  ],
+  "showcase": {"image": "poster.png", "title": "Event poster (Gemini)"}
+}

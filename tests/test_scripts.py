@@ -253,7 +253,7 @@ class StaticChecksTests(unittest.TestCase):
     def test_task_files_are_valid(self):
         tasks_dir = os.path.join(ROOT, "evals", "tasks")
         known = {"skill_loaded", "file_exists", "file_contains", "file_not_contains", "file_unchanged",
-                 "max_file_kb", "brand_colors", "image_size", "audit", "command", "response_contains"}
+                 "max_file_kb", "brand_colors", "image_size", "image_aspect", "audit", "command", "response_contains"}
         for name in os.listdir(tasks_dir):
             with open(os.path.join(tasks_dir, name), encoding="utf-8") as f:
                 task = json.load(f)

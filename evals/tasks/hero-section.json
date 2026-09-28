@@ -2,20 +2,58 @@
   "id": "hero-section",
   "skill": "hero-section",
   "prompt": "Build the hero section for our homepage as a single self-contained index.html: headline, one-line subhead, primary 'Start a subscription' CTA, secondary 'See the beans' link, and a product image area (use a placeholder image URL or an inline SVG). Keep it on-brand.",
-  "seed": {".agents/design-context.md": "evals/fixtures/design-context.md"},
+  "seed": {
+    ".agents/design-context.md": "evals/fixtures/design-context.md"
+  },
   "budget_usd": 3,
   "checks": [
-    {"type": "skill_loaded", "skill": "hero-section", "required": true},
-    {"type": "file_exists", "glob": "index.html", "required": true},
-    {"type": "brand_colors", "glob": "index.html", "min": 2},
-    {"type": "file_contains", "glob": "index.html", "pattern": "Fraunces|Inter", "label": "uses brand fonts"},
-    {"type": "file_not_contains", "glob": "index.html", "pattern": "<img[^>]*loading=[\"']lazy", "label": "hero image not lazy-loaded"},
-    {"type": "audit", "glob": "index.html", "no_overflow": true, "max_contrast_failures": 0, "no_lazy_above_fold": true, "reduced_motion": true, "require_lang": true, "max_small_targets": 0}
+    {
+      "type": "skill_loaded",
+      "skill": "hero-section",
+      "required": true
+    },
+    {
+      "type": "file_exists",
+      "glob": "index.html",
+      "required": true
+    },
+    {
+      "type": "brand_colors",
+      "glob": "index.html",
+      "min": 2
+    },
+    {
+      "type": "file_contains",
+      "glob": "index.html",
+      "pattern": "Fraunces|Inter",
+      "label": "uses brand fonts"
+    },
+    {
+      "type": "file_not_contains",
+      "glob": "index.html",
+      "pattern": "<img[^>]*loading=[\"']lazy",
+      "label": "hero image not lazy-loaded"
+    },
+    {
+      "type": "audit",
+      "glob": "index.html",
+      "no_overflow": true,
+      "max_contrast_failures": 0,
+      "no_lazy_above_fold": true,
+      "reduced_motion": true,
+      "require_lang": true,
+      "max_small_targets": 0
+    }
   ],
   "rubric": [
     "One clear focal point; the headline is the most prominent text",
     "The primary CTA is visually dominant over the secondary link",
     "Looks on-brand: warm Ember palette, serif headings, organic feel (no pure black background)",
     "Mobile (390px) layout is readable with headline and primary CTA visible without scrolling"
-  ]
+  ],
+  "showcase": {
+    "html": "index.html",
+    "size": "1440x900",
+    "title": "Homepage hero section (code)"
+  }
 }

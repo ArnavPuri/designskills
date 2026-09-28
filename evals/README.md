@@ -75,6 +75,20 @@ python evals/run_task_evals.py --grade-only <workspace> --task hero-section   # 
 
 **Measure skill value with `--baseline`.** The difference between runs with and without skills is what the skills contribute. If a task scores the same either way, the skill isn't pulling its weight on that task.
 
+**Isolation:** every run gets a throwaway `HOME` and skill sync turned off, so the only extra skills Claude Code sees are the ones in the workspace. Skills built into Claude Code itself are present on both sides, so the baseline is Claude Code as shipped.
+
+## Showcase for the README
+
+`evals/showcase.py` runs each task that has a `showcase` block twice, with and without skills. Both sides get the same prompt, seed files and tools, including `tools/gemini-generate.py` for the Gemini tasks. It then renders both outputs and composes a labelled side-by-side image:
+
+```bash
+python evals/showcase.py --task hero-section,email-design      # code tasks
+python evals/showcase.py --task poster-gemini,youtube-thumbnail-gemini,instagram-post-gemini   # needs GEMINI_API_KEY
+python evals/showcase.py --compose-only                          # rebuild images + README from saved results
+```
+
+Results are merged into `docs/showcase/results.json`, so tasks can run in separate sessions. Images go to `docs/showcase/`, and the README section between `<!-- showcase:start -->` and `<!-- showcase:end -->` is regenerated each time.
+
 ### Current tasks
 
 | Task | Skill | What it checks |
@@ -86,6 +100,9 @@ python evals/run_task_evals.py --grade-only <workspace> --task hero-section   # 
 | `design-context-detect` | design-context | Colors, fonts and name detected from Tailwind + package.json; saved palette passes contrast |
 | `design-critique` | design-critique | Finds the flaws planted in `tests/fixtures/flawed-page.html`, prioritizes them, leaves the file untouched |
 | `color-palette` | color-palette | Palette written back to design context without clobbering other fields; passes contrast |
+| `poster-gemini` | poster-design | Portrait print ratio, at least 1000px wide (needs `GEMINI_API_KEY`) |
+| `youtube-thumbnail-gemini` | thumbnail-design | Exactly 1280x720 (needs `GEMINI_API_KEY`) |
+| `instagram-post-gemini` | social-media-graphic | Exactly 1080x1350 (needs `GEMINI_API_KEY`) |
 
 ### Adding a task
 
@@ -95,4 +112,4 @@ python evals/run_task_evals.py --grade-only <workspace> --task hero-section   # 
 4. Add a `rubric` for the things only a human eye can judge.
 5. Run it 2–3 times. A check that flips between runs is either too strict or catching a real inconsistency, so work out which.
 
-Graphic tasks that need `GEMINI_API_KEY` are left out of the default set so the evals run anywhere. `social-graphic-code` covers the code path instead.
+Tasks with `"requires_env": ["GEMINI_API_KEY"]` are skipped when the key isn't set, so the suite still runs anywhere. `social-graphic-code` covers the graphic path without Gemini.

@@ -1,0 +1,22 @@
+{
+  "id": "instagram-post-gemini",
+  "skill": "social-media-graphic",
+  "prompt": "Create an Instagram feed post announcing Ember Coffee's new single-origin roast, 'Ethiopia Guji' (tasting notes: blueberry, jasmine, cacao). Generate it with the Gemini image CLI at tools/gemini-generate.py (GEMINI_API_KEY is set; run it with --help for options). Save the final post as post.png at exactly 1080x1350.",
+  "seed": {
+    ".agents/design-context.md": "evals/fixtures/design-context.md",
+    "tools/gemini-generate.py": "skills/image-generation/scripts/gemini-generate.py"
+  },
+  "requires_env": ["GEMINI_API_KEY"],
+  "budget_usd": 3,
+  "checks": [
+    {"type": "skill_loaded", "skill": "social-media-graphic", "required": true},
+    {"type": "image_size", "glob": "post.png", "width": 1080, "height": 1350, "required": true}
+  ],
+  "rubric": [
+    "Roast name is the focal point and spelled exactly 'Ethiopia Guji'",
+    "Readable at feed-thumbnail size (about 320px wide)",
+    "Text keeps clear of the edges; nothing important is cropped",
+    "On-brand warm palette"
+  ],
+  "showcase": {"image": "post.png", "title": "Instagram post (Gemini)"}
+}

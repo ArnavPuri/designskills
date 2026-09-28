@@ -29,6 +29,7 @@ Check types (a check with "required": true fails the whole task):
   max_file_kb        {glob, kb}
   brand_colors       {glob, min}                   at least `min` hex colors from the seeded design context
   image_size         {glob, width, height}         PNG/JPG exact pixel size
+  image_aspect       {glob, ratios, min_width?}    aspect ratio within 2% of one of `ratios` ("2:3", ...)
   audit              {glob, ...thresholds}         runs design-critique/scripts/audit.mjs; thresholds:
                      no_overflow, max_contrast_failures, max_dark_contrast_failures,
                      no_lazy_above_fold, reduced_motion, require_lang, max_small_targets
@@ -108,6 +109,21 @@ def parse_stream(lines):
     return {"skills": skills, "final": final, "cost_usd": cost}
 
 
+def isolated_env(ws):
+    """Environment for the child Claude Code: a throwaway HOME and no skill sync, so the only
+    extra skills it sees are the ones in the workspace (built-in skills remain on both sides)."""
+    env = dict(os.environ)
+    env.pop("CLAUDE_CODE_SYNC_SKILLS", None)
+    home = os.path.join(ws, ".eval-home")
+    os.makedirs(home, exist_ok=True)
+    env["HOME"] = home
+    return env
+
+
+def missing_env(task):
+    return [name for name in task.get("requires_env", []) if not os.environ.get(name)]
+
+
 def run_claude(task, ws, model, timeout):
     cmd = ["claude", "-p", task["prompt"], "--output-format", "stream-json", "--verbose",
            "--setting-sources", "project", "--permission-mode", "acceptEdits",
@@ -116,7 +132,7 @@ def run_claude(task, ws, model, timeout):
     if model:
         cmd += ["--model", model]
     try:
-        proc = subprocess.run(cmd, cwd=ws, capture_output=True, text=True, timeout=timeout)
+        proc = subprocess.run(cmd, cwd=ws, env=isolated_env(ws), capture_output=True, text=True, timeout=timeout)
         out, err = proc.stdout, proc.stderr
     except subprocess.TimeoutExpired as e:
         out, err = (e.stdout or b"").decode() if isinstance(e.stdout, bytes) else (e.stdout or ""), "timeout"
@@ -196,6 +212,14 @@ def grade_check(check, task, ws, run, cache):
         from PIL import Image
         size = Image.open(matched[0]).size
         return result(size == (check["width"], check["height"]), f"{size[0]}x{size[1]}")
+    if kind == "image_aspect":
+        if not matched:
+            return result(False, "no matching file")
+        from PIL import Image
+        w, h = Image.open(matched[0]).size
+        ok = any(abs(w / h - int(a) / int(b)) <= 0.02 * int(a) / int(b)
+                 for a, b in (r.split(":") for r in check["ratios"]))
+        return result(ok and w >= check.get("min_width", 0), f"{w}x{h}")
     if kind == "audit":
         if not matched:
             return result(False, "no matching file")
@@ -291,6 +315,9 @@ def judge(task, ws, cache, model):
 # --- main ----------------------------------------------------------------------------------
 
 def evaluate(task, args):
+    if missing_env(task) and not args.grade_only:
+        return {"id": task["id"], "workspace": None, "skills_loaded": [], "cost_usd": None, "checks": [],
+                "score": 0, "pass": False, "skipped": f"missing env: {', '.join(missing_env(task))}"}
     if args.grade_only:
         ws, run = args.grade_only, {"skills": [], "final": "", "cost_usd": None}
         transcript = os.path.join(ws, ".eval-transcript.jsonl")
@@ -344,6 +371,9 @@ def main():
         outcomes = list(pool.map(lambda t: evaluate(t, args), tasks))
 
     for o in outcomes:
+        if o.get("skipped"):
+            print(f"SKIP  {o['id']:<24} {o['skipped']}")
+            continue
         cost = f"  ${o['cost_usd']:.2f}" if o.get("cost_usd") else ""
         judge_txt = f"  judge {o['judge']['mean']}/5" if o.get("judge", {}).get("mean") else ""
         print(f"{'PASS' if o['pass'] else 'FAIL'}  {o['id']:<24} {o['score']:.0%} checks{judge_txt}{cost}")
