@@ -1,21 +1,25 @@
 ---
 name: card-design
 description: >
-  Card-based layout patterns including product cards, feature cards, and interactive cards.
-  Trigger: user asks to "design a card", "build card layout", "create a product card",
-  "make a card grid", "design a testimonial card", "blog post card", "feature card",
-  "pricing card", or any card-based UI component.
+  Individual card components and card grids: anatomy, grid/masonry/carousel layouts, hover
+  effects, and ready patterns for product, feature, testimonial, blog, expandable, and
+  flippable cards plus skeleton loaders. Use when the user asks to "design a card", "build
+  card layout", "create a product card", "make a card grid", "design a testimonial card",
+  "blog post card", "feature card", "pricing card", or any card-based UI component. For the
+  full page section around the cards use landing-page-design; for KPI/stat tiles use
+  dashboard-design; for general components use ui-design.
 license: MIT
 ---
 
 # Card Design
 
-## Pre-Flight: Check Design Context
+## Before You Start: Load Design Context
 
-Before generating card components:
-1. Use `get_design_context` to check for existing design tokens, border radii, shadow scales, or component libraries.
-2. If a Figma URL is provided, pull screenshots and metadata to match the design precisely.
-3. Determine: What content goes in the card? What action does the user take?
+1. **Read `.agents/design-context.md`** (written by the `design-context` skill). If it is missing, look for tokens in `tailwind.config.*` or `:root` CSS variables. If nothing exists, use the defaults (Primary `#2563EB`, Secondary `#7C3AED`, Accent `#F59E0B`, Tailwind gray neutrals, Inter for headings and body, Minimal style) and **tell the user defaults were used** — suggest running `design-context`.
+2. **Map tokens to CSS variables once**, then use only the variables: `--color-primary`, `--color-primary-light`, `--color-primary-dark`, `--color-secondary`, `--color-accent`, `--color-neutral-50`…`--color-neutral-900`, `--color-success`/`-warning`/`-error`, `--font-heading`, `--font-body`, `--font-mono`, `--radius`, and the 4px-base spacing scale.
+3. **Tailwind:** expose the same variables (v3 `theme.extend`, v4 `@theme`) as `primary`, `primary-light`, `primary-dark`, `secondary`, `accent`, `neutral-*`, `font-heading`, `font-body`. The `indigo-*` / `gray-*` classes in the examples below are placeholders for these tokens.
+4. **Figma:** if the user gives a Figma URL, pull it with the Figma MCP (`get_design_context`, `get_screenshot`) and match it; it overrides the context file for that design.
+5. Use the context's `--radius` and shadow style for every card; ask what content goes in the card and what single action it leads to.
 
 ---
 
@@ -39,11 +43,11 @@ Every card has up to five zones. Not all are required.
 ### Base Card Style
 ```css
 .card {
-  background: white;
-  border-radius: 1rem;
-  border: 1px solid oklch(92% 0 0);
+  background: var(--color-surface, #fff);
+  border-radius: var(--radius, 1rem);
+  border: 1px solid var(--color-neutral-200, oklch(92% 0 0));
   overflow: hidden;
-  transition: all 200ms ease;
+  transition: box-shadow 200ms ease, transform 200ms ease, border-color 200ms ease;
 }
 ```
 
@@ -97,8 +101,10 @@ Every card has up to five zones. Not all are required.
 
 ### Horizontal Scroll (Mobile)
 ```html
-<div class="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4
-  scrollbar-hide -mx-4 px-4">
+<!-- Focusable, labelled region so keyboard users can scroll it.
+     (`scrollbar-hide` is not core Tailwind — it needs the tailwind-scrollbar-hide plugin; keep the scrollbar if unsure) -->
+<div class="flex gap-4 overflow-x-auto snap-x snap-mandatory scroll-px-4 pb-4 -mx-4 px-4"
+  tabindex="0" role="region" aria-label="Featured products">
   <div class="snap-start shrink-0 w-72"><!-- card --></div>
   <div class="snap-start shrink-0 w-72"><!-- card --></div>
   <div class="snap-start shrink-0 w-72"><!-- card --></div>
@@ -122,13 +128,22 @@ Every card has up to five zones. Not all are required.
   transition-all duration-300">
 ```
 
-### Border Reveal
-```html
-<div class="relative bg-white rounded-2xl p-6 border border-transparent
-  before:absolute before:inset-0 before:rounded-2xl before:p-px
-  before:bg-gradient-to-br before:from-indigo-500 before:to-purple-500
-  before:opacity-0 hover:before:opacity-100 before:transition-opacity
-  before:-z-10">
+### Gradient Border Reveal
+Two backgrounds: the surface clipped to the padding box, the gradient to the border box behind a transparent border.
+```css
+.card-gradient-border {
+  border: 1px solid transparent;
+  border-radius: var(--radius, 1rem);
+  background:
+    linear-gradient(var(--color-surface, #fff), var(--color-surface, #fff)) padding-box,
+    linear-gradient(var(--color-neutral-200, #e5e7eb), var(--color-neutral-200, #e5e7eb)) border-box;
+}
+.card-gradient-border:hover,
+.card-gradient-border:focus-within {
+  background:
+    linear-gradient(var(--color-surface, #fff), var(--color-surface, #fff)) padding-box,
+    linear-gradient(135deg, var(--color-primary), var(--color-accent)) border-box;
+}
 ```
 
 ### Content Slide-Up
@@ -139,10 +154,11 @@ Every card has up to five zones. Not all are required.
     <h3 class="font-bold text-gray-900">Card Title</h3>
     <p class="mt-2 text-gray-600 text-sm">Description text here.</p>
   </div>
-  <!-- Hidden actions that slide up on hover -->
+  <!-- Actions slide up on hover AND keyboard focus; always visible on touch (no hover) -->
   <div class="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-white via-white
-    translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-    <button class="w-full bg-indigo-600 text-white py-2 rounded-lg font-medium">
+    translate-y-full group-hover:translate-y-0 group-focus-within:translate-y-0
+    [@media(hover:none)]:translate-y-0 motion-safe:transition-transform duration-300">
+    <button type="button" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-medium">
       View details
     </button>
   </div>
@@ -151,11 +167,11 @@ Every card has up to five zones. Not all are required.
 
 ### Image Zoom on Hover
 ```html
-<div class="rounded-2xl overflow-hidden border border-gray-200">
+<div class="group rounded-2xl overflow-hidden border border-gray-200">
   <div class="overflow-hidden">
-    <img src="/image.jpg" alt=""
-      class="w-full h-48 object-cover transition-transform duration-500
-        group-hover:scale-110" />
+    <img src="/image.jpg" alt="" width="600" height="400" loading="lazy"
+      class="w-full h-48 object-cover motion-safe:transition-transform duration-500
+        motion-safe:group-hover:scale-110" />
   </div>
 </div>
 ```
@@ -169,16 +185,18 @@ Every card has up to five zones. Not all are required.
   hover:shadow-lg transition-all duration-200">
   <!-- Image -->
   <div class="relative overflow-hidden">
-    <img src="/product.jpg" alt="Product name"
-      class="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-500" />
-    <!-- Badge -->
-    <span class="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold
+    <img src="/product.jpg" alt="Product name" width="600" height="448" loading="lazy"
+      class="w-full h-56 object-cover motion-safe:group-hover:scale-105 transition-transform duration-500" />
+    <!-- Badge (red-600, not red-500: white text needs 4.5:1) -->
+    <span class="absolute top-3 left-3 bg-red-600 text-white text-xs font-bold
       px-2.5 py-1 rounded-full">-20%</span>
-    <!-- Wishlist button -->
-    <button class="absolute top-3 right-3 w-9 h-9 bg-white/90 backdrop-blur rounded-full
-      flex items-center justify-center text-gray-600 hover:text-red-500
-      opacity-0 group-hover:opacity-100 transition-all">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <!-- Wishlist button: visible on hover, keyboard focus, and touch devices -->
+    <button type="button" aria-label="Add to wishlist" aria-pressed="false"
+      class="absolute top-3 right-3 w-11 h-11 bg-white/90 backdrop-blur rounded-full
+      flex items-center justify-center text-gray-600 hover:text-red-600
+      opacity-0 group-hover:opacity-100 focus-visible:opacity-100
+      [@media(hover:none)]:opacity-100 transition-opacity">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
           d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
       </svg>
@@ -195,23 +213,23 @@ Every card has up to five zones. Not all are required.
     </h3>
     <!-- Rating -->
     <div class="mt-2 flex items-center gap-1.5">
-      <div class="flex text-amber-400">
-        <!-- 4.5 stars -->
+      <div class="flex text-amber-400" role="img" aria-label="Rated 4.5 out of 5">
+        <!-- 4.5 stars, each aria-hidden="true" -->
         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
         <!-- repeat for remaining stars -->
       </div>
-      <span class="text-sm text-gray-500">(128)</span>
+      <span class="text-sm text-gray-500">(128<span class="sr-only"> reviews</span>)</span>
     </div>
     <!-- Price -->
     <div class="mt-3 flex items-baseline gap-2">
-      <span class="text-xl font-bold text-gray-900">$249</span>
-      <span class="text-sm text-gray-400 line-through">$319</span>
+      <span class="text-xl font-bold text-gray-900"><span class="sr-only">Sale price </span>$249</span>
+      <del class="text-sm text-gray-500"><span class="sr-only">Original price </span>$319</del>
     </div>
   </div>
 
   <!-- Action -->
   <div class="px-4 pb-4">
-    <button class="w-full bg-gray-950 text-white py-2.5 rounded-xl font-medium
+    <button type="button" class="w-full bg-gray-950 text-white py-2.5 rounded-xl font-medium
       hover:bg-gray-800 active:bg-gray-900 transition-colors">
       Add to cart
     </button>
@@ -229,7 +247,7 @@ Every card has up to five zones. Not all are required.
   <!-- Icon -->
   <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600
     flex items-center justify-center">
-    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
         d="M13 10V3L4 14h7v7l9-11h-7z"/>
     </svg>
@@ -259,7 +277,7 @@ Every card has up to five zones. Not all are required.
 ```html
 <div class="bg-white rounded-2xl border border-gray-200 p-6">
   <!-- Stars -->
-  <div class="flex gap-0.5 text-amber-400 mb-4">
+  <div class="flex gap-0.5 text-amber-400 mb-4" role="img" aria-label="Rated 5 out of 5">
     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
     <!-- repeat 5x -->
   </div>
@@ -285,11 +303,12 @@ Every card has up to five zones. Not all are required.
 
 ```html
 <a href="/blog/post-slug" class="group block bg-white rounded-2xl border border-gray-200
-  overflow-hidden hover:shadow-lg transition-all duration-200">
+  overflow-hidden hover:shadow-lg transition-shadow duration-200
+  focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
   <!-- Image -->
   <div class="overflow-hidden">
-    <img src="/blog-cover.jpg" alt=""
-      class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500" />
+    <img src="/blog-cover.jpg" alt="" width="600" height="384" loading="lazy"
+      class="w-full h-48 object-cover motion-safe:group-hover:scale-105 transition-transform duration-500" />
   </div>
   <!-- Content -->
   <div class="p-5">
@@ -314,7 +333,7 @@ Every card has up to five zones. Not all are required.
     <div class="mt-4 flex items-center gap-2">
       <img src="/avatar.jpg" alt="" class="w-6 h-6 rounded-full" />
       <span class="text-sm text-gray-600">Sarah Kim</span>
-      <span class="text-sm text-gray-400">Mar 15, 2026</span>
+      <time datetime="2026-03-15" class="text-sm text-gray-500">Mar 15, 2026</time>
     </div>
   </div>
 </a>
@@ -347,19 +366,21 @@ Every card has up to five zones. Not all are required.
 ```
 
 ### Flippable Card
+Use sparingly — hidden content is easy to miss. The flip must also trigger on keyboard focus, and should be a simple swap (no 3D) under reduced motion. Prefer the expandable card when the back holds important content.
 ```html
 <div class="group [perspective:1000px] h-64 w-full">
-  <div class="relative h-full w-full transition-transform duration-500
-    [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)]">
+  <div class="relative h-full w-full motion-safe:transition-transform duration-500
+    [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)]
+    group-focus-within:[transform:rotateY(180deg)]">
     <!-- Front -->
     <div class="absolute inset-0 bg-white rounded-2xl border border-gray-200
       p-6 flex flex-col items-center justify-center [backface-visibility:hidden]">
       <div class="w-16 h-16 rounded-2xl bg-indigo-100 text-indigo-600
         flex items-center justify-center text-2xl mb-4">
-        <svg class="w-8 h-8"><!-- icon --></svg>
+        <svg class="w-8 h-8" aria-hidden="true"><!-- icon --></svg>
       </div>
       <h3 class="font-bold text-gray-900">Feature Name</h3>
-      <p class="mt-2 text-sm text-gray-500 text-center">Hover to learn more</p>
+      <p class="mt-2 text-sm text-gray-500 text-center">Hover or focus to learn more</p>
     </div>
     <!-- Back -->
     <div class="absolute inset-0 bg-indigo-600 rounded-2xl p-6
@@ -369,8 +390,9 @@ Every card has up to five zones. Not all are required.
         Detailed description of this feature. Includes specific benefits
         and use cases for your team.
       </p>
-      <button class="mt-4 bg-white text-indigo-600 px-4 py-2 rounded-lg
-        font-medium text-sm">Learn more</button>
+      <!-- Focusing this link flips the card (group-focus-within) -->
+      <a href="#" class="mt-4 bg-white text-indigo-700 px-4 py-2 rounded-lg
+        font-medium text-sm">Learn more about Feature Name</a>
     </div>
   </div>
 </div>
@@ -381,8 +403,10 @@ Every card has up to five zones. Not all are required.
 ## 9. Skeleton Loading States
 
 ```html
-<!-- Skeleton card mimics the final card structure -->
-<div class="bg-white rounded-2xl border border-gray-200 overflow-hidden animate-pulse">
+<!-- Skeleton card mimics the final card structure.
+     Put aria-busy="true" + an sr-only "Loading…" on the grid container, not on each card. -->
+<div class="bg-white rounded-2xl border border-gray-200 overflow-hidden motion-safe:animate-pulse"
+  aria-hidden="true">
   <!-- Image placeholder -->
   <div class="h-48 bg-gray-200"></div>
   <!-- Content placeholders -->
@@ -403,10 +427,21 @@ Every card has up to five zones. Not all are required.
 
 ### Skeleton Rules
 1. Match the exact layout of the real card (same heights, widths, spacing).
-2. Use `animate-pulse` on the container (not individual elements).
+2. Use `motion-safe:animate-pulse` on the container (not individual elements).
 3. Use `rounded-full` for text placeholders, `rounded-lg` for images.
 4. Show 3–6 skeleton cards while loading, matching the expected grid.
 5. Transition from skeleton to real content without layout shift.
+
+---
+
+## Verify: Render and Check
+
+Don't hand over code you haven't looked at. After generating it:
+1. Screenshot it at mobile and desktop widths, e.g. `npx playwright screenshot --full-page --viewport-size=390,844 file://$PWD/index.html mobile.png`, then again with `--viewport-size=1440,900` (or point at the dev server URL).
+2. Open both images and check: no horizontal scroll or clipped/overlapping text, hierarchy reads at a glance, brand tokens are applied, images load at the right aspect ratio.
+3. Tab through once: every interactive element gets a visible focus ring, in a logical order.
+4. Check cards in a grid with long and short content (equal heights, line-clamp works), and that hover-only content is reachable by keyboard and on touch.
+5. Fix what you find and re-screenshot before reporting done.
 
 ---
 
@@ -415,10 +450,13 @@ Every card has up to five zones. Not all are required.
 - [ ] Card has clear visual boundaries (border, shadow, or background contrast)
 - [ ] Content hierarchy: media > title > description > actions
 - [ ] Hover effect provides feedback (lift, glow, or border change)
-- [ ] Interactive cards are keyboard accessible (`tabindex`, `focus-visible`)
+- [ ] Interactive cards use a real `<a>` or `<button>` (not `tabindex` on a `<div>`) with a `focus-visible` ring
+- [ ] Hover-only content (actions, flip side) also appears on focus and on touch devices
+- [ ] Hover motion respects `prefers-reduced-motion`; card images have width/height and `loading="lazy"`
 - [ ] Text is truncated with `line-clamp` where needed
 - [ ] Grid is responsive (3 cols desktop, 2 tablet, 1 mobile)
 - [ ] Loading skeleton matches card layout
 - [ ] Images have proper `alt` text and `object-cover`
-- [ ] Card links wrap the entire card (or use `::after` pseudo-element)
+- [ ] Card links wrap the entire card, or use the stretched-link pattern (`::after { inset: 0 }` on the title link) when the card also contains other buttons — never nest interactive elements inside an `<a>`
+- [ ] Rendered and screenshotted at 390px and 1440px (see Verify)
 - [ ] Consistent border radius, padding, and spacing across all cards

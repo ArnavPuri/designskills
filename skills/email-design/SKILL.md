@@ -1,21 +1,23 @@
 ---
 name: email-design
 description: >
-  HTML email template design with cross-client compatibility and responsive patterns.
-  Trigger: user asks to "design an email", "build an email template", "create a newsletter",
-  "HTML email", "email layout", "transactional email", "welcome email",
-  "promotional email", or any email template work.
+  Coded HTML email templates that render across Outlook, Gmail, Apple Mail, and mobile:
+  table layout, fluid-hybrid responsiveness, bulletproof buttons, email dark mode, and size
+  limits. Use when the user asks to "design an email", "build an email template", "create a
+  newsletter", "HTML email", "email layout", "transactional email", "welcome email",
+  "promotional email", or any email template work. Not for web landing pages
+  (landing-page-design) or web dark themes (dark-mode).
 license: MIT
 ---
 
 # Email Design
 
-## Pre-Flight: Check Design Context
+## Before You Start: Load Design Context
 
-Before generating email template code:
-1. Use `get_design_context` to check for existing brand colors, logos, fonts, or email design systems.
-2. If a Figma URL is provided, pull screenshots and metadata to match the design.
-3. Determine: What type of email? (welcome, newsletter, promotional, transactional) What ESP?
+1. **Read `.agents/design-context.md`** (written by the `design-context` skill). If it is missing, look for tokens in `tailwind.config.*` or `:root` CSS variables. If nothing exists, use the defaults (Primary `#2563EB`, Secondary `#7C3AED`, Accent `#F59E0B`, Tailwind gray neutrals, Inter for headings and body, Minimal style) and **tell the user defaults were used** — suggest running `design-context`.
+2. **Inline the hex values** — email clients don't support CSS variables. Use Primary for buttons and links, Neutral 900/800/500 for headings, body and muted text, Neutral 50/100 for the outer background, and put the brand heading/body font first in each web-safe stack (section 5). The `#4F46E5`-style hex values below are placeholders.
+3. **Figma:** if the user gives a Figma URL, pull it with the Figma MCP (`get_design_context`, `get_screenshot`) and match it; it overrides the context file for that design.
+4. Ask: what type of email (welcome, newsletter, promotional, transactional) and which ESP (it may need its own merge tags and template syntax)?
 
 ---
 
@@ -25,15 +27,16 @@ Email HTML is not web HTML. These constraints are non-negotiable:
 
 | Rule | Why |
 |------|-----|
-| **Table-based layout** | Outlook and older clients don't support flexbox/grid |
-| **Inline CSS** | Many clients strip `<style>` blocks |
+| **Table-based layout** | Outlook for Windows (Word rendering engine) has no flexbox, grid, `max-width`, or reliable `float` |
+| **Inline CSS** | Some clients strip or partly ignore `<style>` (Gmail for non-Google accounts, many webmail/older clients); keep `<style>` only for media queries and dark mode |
 | **No JavaScript** | Stripped by all email clients |
 | **No external CSS** | Some clients block external resources |
-| **Max width 600px** | Standard email client viewport |
+| **Max width 600px** | Standard email client viewport (600–640px) |
+| **HTML under ~100KB** | Gmail clips messages over 102KB — content, the unsubscribe link, and the open-tracking pixel get hidden behind "View entire message" |
 | **Web-safe fonts** | Custom fonts require fallbacks |
 | **Alt text on all images** | Images are often blocked by default |
 | **No CSS variables** | Not supported in most email clients |
-| **No shorthand properties** | Use `padding-top`, not `padding: 10px` in some clients |
+| **Padding on `<td>`, not `<a>`/`<p>`/`<div>`** | Outlook desktop ignores padding/margin on many elements, plus `border-radius`, background images (without VML), and `rgba()` colors |
 
 ---
 
@@ -49,6 +52,7 @@ Email HTML is not web HTML. These constraints are non-negotiable:
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="color-scheme" content="light dark" />
   <meta name="supported-color-schemes" content="light dark" />
+  <meta name="format-detection" content="telephone=no, date=no, address=no, email=no" />
   <title>Email Subject Line</title>
 
   <!--[if mso]>
@@ -62,6 +66,7 @@ Email HTML is not web HTML. These constraints are non-negotiable:
   <![endif]-->
 
   <style>
+    :root { color-scheme: light dark; supported-color-schemes: light dark; }
     /* Reset styles */
     body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
     table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
@@ -82,26 +87,30 @@ Email HTML is not web HTML. These constraints are non-negotiable:
       .padding-mobile { padding: 20px !important; }
     }
 
-    /* Dark mode */
+    /* Dark mode: Apple Mail, iOS Mail, Outlook for Mac/iOS/Android, some others */
     @media (prefers-color-scheme: dark) {
-      .email-bg { background-color: #1a1a2e !important; }
-      .dark-bg { background-color: #16213e !important; }
-      .dark-text { color: #e0e0e0 !important; }
-      .dark-text-secondary { color: #a0a0a0 !important; }
-      h1, h2, h3 { color: #ffffff !important; }
+      .email-bg { background-color: #121212 !important; }
+      .dark-bg { background-color: #1e1e1e !important; }
+      .dark-text { color: #e6e6e6 !important; }
+      .dark-text-secondary { color: #b3b3b3 !important; }
+      h1, h2, h3 { color: #f2f2f2 !important; }
     }
-    [data-ogsc] .dark-bg { background-color: #16213e !important; }
-    [data-ogsc] .dark-text { color: #e0e0e0 !important; }
+    /* Outlook.com / Outlook apps: [data-ogsb] = backgrounds, [data-ogsc] = text colors */
+    [data-ogsb] .email-bg { background-color: #121212 !important; }
+    [data-ogsb] .dark-bg { background-color: #1e1e1e !important; }
+    [data-ogsc] .dark-text { color: #e6e6e6 !important; }
+    [data-ogsc] .dark-text-secondary { color: #b3b3b3 !important; }
   </style>
 </head>
 
 <body style="margin: 0; padding: 0; background-color: #f4f4f7; font-family: -apple-system,
   BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;"
   class="email-bg">
+  <div role="article" aria-roledescription="email" aria-label="Email Subject Line" lang="en">
 
   <!-- Preview text (hidden) -->
   <div style="display: none; font-size: 1px; line-height: 1px; max-height: 0;
-    max-width: 0; opacity: 0; overflow: hidden;">
+    max-width: 0; opacity: 0; overflow: hidden; mso-hide: all;">
     Your preview text goes here. Keep it under 100 characters.
     &#847; &#847; &#847; <!-- Prevent client from pulling in other text -->
   </div>
@@ -114,9 +123,9 @@ Email HTML is not web HTML. These constraints are non-negotiable:
 
         <!-- Email container: 600px max -->
         <table role="presentation" cellpadding="0" cellspacing="0" border="0"
-          width="600" class="email-container"
+          width="600" class="email-container dark-bg"
           style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 8px;
-            overflow: hidden;" class="dark-bg">
+            overflow: hidden;">
 
           <!-- HEADER -->
           <!-- HERO -->
@@ -129,6 +138,7 @@ Email HTML is not web HTML. These constraints are non-negotiable:
       </td>
     </tr>
   </table>
+  </div>
 </body>
 </html>
 ```
@@ -137,7 +147,7 @@ Email HTML is not web HTML. These constraints are non-negotiable:
 
 ## 3. MSO Conditional Comments (Outlook)
 
-Outlook uses Word as its rendering engine. Use MSO conditionals for Outlook-specific fixes.
+Classic Outlook for Windows (2007–2021, 365 desktop) renders with Microsoft Word. The "new Outlook" for Windows and Outlook.com use a browser engine, but classic Outlook is still widely used — keep supporting it. Use MSO conditionals for Word-engine fixes.
 
 ```html
 <!-- Target Outlook only -->
@@ -206,24 +216,13 @@ The fluid hybrid approach works without media queries in clients that don't supp
 ## 5. Email Typography
 
 ### Web-Safe Font Stacks
-```css
-/* Sans-serif (most common) */
-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-
-/* Serif */
-font-family: Georgia, 'Times New Roman', Times, serif;
-
-/* Monospace (for code) */
-font-family: 'Courier New', Courier, monospace;
-```
+Put the design-context font first, then a web-safe fallback stack:
+- **Sans:** `'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif`
+- **Serif:** `Georgia, 'Times New Roman', Times, serif` · **Mono:** `'Courier New', Courier, monospace`
 
 ### Web Font Loading (Limited Support)
-```html
-<!-- Works in Apple Mail, iOS Mail, Android default, Thunderbird -->
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-</style>
-```
+Gmail and Outlook ignore web fonts. Classic Outlook falls back to Times New Roman when the first font isn't installed — add `<!--[if mso]><style>h1,h2,h3,p,td,a { font-family: Arial, sans-serif !important; }</style><![endif]-->`.
+Where supported (Apple Mail, iOS Mail, Samsung Mail, Thunderbird), load it in `<head>`: `<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">`.
 
 ### Typography Scale for Email
 | Element | Size | Weight | Line Height |
@@ -250,9 +249,10 @@ Buttons that work in every email client, including Outlook.
 ```html
 <table role="presentation" cellpadding="0" cellspacing="0" border="0">
   <tr>
-    <td style="border-radius: 8px; background-color: #4F46E5;" class="button-bg">
+    <td style="border-radius: 8px; background-color: #4F46E5; mso-padding-alt: 14px 32px;"
+      class="button-bg">
       <a href="https://example.com" target="_blank"
-        style="display: inline-block; padding: 14px 32px; font-size: 16px;
+        style="display: inline-block; padding: 14px 32px; background-color: #4F46E5; font-size: 16px;
           font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
           Roboto, sans-serif; color: #ffffff; text-decoration: none;
           border-radius: 8px;">
@@ -266,9 +266,8 @@ Buttons that work in every email client, including Outlook.
 ### Button Rules
 - Minimum size: 44px tall, 150px+ wide.
 - Use `display: inline-block` with padding (not fixed width).
-- Add `target="_blank"` on all links.
-- Set both `background-color` on the `<td>` AND the `<a>` for Outlook.
-- `border-radius` on `<td>` works in most clients but not Outlook.
+- Set `background-color` on both the `<td>` and the `<a>`; Outlook ignores the `<a>` padding, so `mso-padding-alt` on the `<td>` restores the button size there (only the text is clickable in Outlook).
+- `border-radius` works in most clients but not classic Outlook (square corners there).
 - For Outlook rounded buttons, use VML (see section 3).
 
 ---
@@ -294,7 +293,8 @@ Buttons that work in every email client, including Outlook.
       line-height: 1.2;">
       Welcome to Our Platform
     </h1>
-    <p style="margin: 16px 0 0; font-size: 16px; color: rgba(255,255,255,0.8);
+    <!-- Solid hex, not rgba(): classic Outlook doesn't support rgba -->
+    <p style="margin: 16px 0 0; font-size: 16px; color: #E0E7FF;
       line-height: 1.5;">
       You're all set to start building amazing things.
     </p>
@@ -362,11 +362,12 @@ Buttons that work in every email client, including Outlook.
       </tr>
     </table>
     <!-- Company info -->
-    <p style="margin: 16px 0 0; font-size: 13px; line-height: 1.5; color: #999;">
+    <!-- #6b6b6b, not #999: footer text still needs 4.5:1 on white -->
+    <p style="margin: 16px 0 0; font-size: 13px; line-height: 1.5; color: #6b6b6b;">
       Company Name, 123 Street, City, State 12345<br />
-      <a href="#" style="color: #999; text-decoration: underline;">Unsubscribe</a>
+      <a href="#" style="color: #6b6b6b; text-decoration: underline;">Unsubscribe</a>
       &nbsp;|&nbsp;
-      <a href="#" style="color: #999; text-decoration: underline;">Manage preferences</a>
+      <a href="#" style="color: #6b6b6b; text-decoration: underline;">Manage preferences</a>
     </p>
   </td>
 </tr>
@@ -376,25 +377,17 @@ Buttons that work in every email client, including Outlook.
 
 ## 8. Dark Mode Email Considerations
 
-### Meta Tags (Required)
-```html
-<meta name="color-scheme" content="light dark" />
-<meta name="supported-color-schemes" content="light dark" />
-```
+The base structure (section 2) already includes the required pieces: the `color-scheme` / `supported-color-schemes` meta tags and `:root` rule, a `prefers-color-scheme: dark` block, and `[data-ogsb]` / `[data-ogsc]` overrides for Outlook.com and the Outlook apps.
 
-### CSS Targeting
-```css
-/* Apple Mail, iOS Mail */
-@media (prefers-color-scheme: dark) {
-  .email-bg { background-color: #1a1a2e !important; }
-  .dark-bg { background-color: #16213e !important; }
-  .dark-text { color: #e0e0e0 !important; }
-}
+### How Clients Behave
+| Client | Behavior | What you control |
+|--------|----------|------------------|
+| Apple Mail, iOS Mail, Outlook Mac | Honor `prefers-color-scheme` | Full custom dark palette |
+| Outlook.com, Outlook iOS/Android | Partial auto-invert | `[data-ogsb]` / `[data-ogsc]` overrides |
+| Gmail app (iOS/Android) | Full or partial forced inversion | Nothing — design to survive it |
 
-/* Outlook.com */
-[data-ogsc] .dark-bg { background-color: #16213e !important; }
-[data-ogsc] .dark-text { color: #e0e0e0 !important; }
-```
+- Avoid pure `#000`/`#fff` pairs; mid-dark backgrounds (`#121212`–`#1e1e1e`) with off-white text invert more gracefully.
+- Keep brand colors on buttons as `background-color` on the `<td>` so inversion doesn't turn text unreadable.
 
 ### Image Handling
 - Use transparent PNGs where possible (adapt to any background).
@@ -409,7 +402,7 @@ Buttons that work in every email client, including Outlook.
 | Guideline | Value |
 |-----------|-------|
 | Max file size per image | 200KB |
-| Total email size | Under 100KB HTML + 800KB images |
+| Total email size | HTML under 102KB (Gmail clipping; aim for < 80KB) + under ~1MB of images |
 | Format | PNG for graphics, JPEG for photos |
 | Retina | Serve 2x, set `width` attribute to 1x |
 | Alt text | Always. Styled alt text as fallback. |
@@ -463,6 +456,20 @@ Buttons that work in every email client, including Outlook.
 - Password reset: single CTA button, security note
 - No promotional content (improves deliverability)
 
+### Deliverability Basics (All Types)
+- Bulk senders (Gmail/Yahoo rules since 2024): one-click unsubscribe headers (`List-Unsubscribe` + `List-Unsubscribe-Post`, RFC 8058), SPF/DKIM/DMARC, and a visible unsubscribe link.
+- Always include a plain-text alternative part and a physical mailing address in the footer.
+
+---
+
+## Verify: Render and Check
+
+Don't hand over an email you haven't looked at. After generating it:
+1. Screenshot it in a browser at 390px and 1440px, e.g. `npx playwright screenshot --full-page --viewport-size=390,844 file://$PWD/email.html mobile.png`. The desktop shot should show a centered 600px column; the mobile shot should stack columns with no horizontal scroll.
+2. Take a dark screenshot (`--color-scheme=dark`) and an images-off pass (remove `src` attributes) — the message and CTA must still read.
+3. Check the file size: `wc -c email.html` must be under ~100KB after inlining.
+4. For real client coverage (classic Outlook, Gmail app), send through Litmus / Email on Acid or a test inbox — a browser can't emulate the Word engine. Tell the user this step is still needed if you can't run it.
+
 ---
 
 ## Email Design Checklist
@@ -477,8 +484,8 @@ Buttons that work in every email client, including Outlook.
 - [ ] Web-safe fonts with fallback stack
 - [ ] Preview text is set (hidden preheader)
 - [ ] Dark mode meta tags and CSS included
-- [ ] Images under 200KB each, total email under 100KB HTML
-- [ ] Unsubscribe link in footer
+- [ ] Images under 200KB each; HTML under 102KB so Gmail doesn't clip it
 - [ ] Tested in Litmus or Email on Acid across major clients
-- [ ] Links have `target="_blank"`
+- [ ] Unsubscribe + physical address in footer; `List-Unsubscribe` headers set in the ESP
+- [ ] Rendered and screenshotted at 390px and 1440px, light and dark (see Verify)
 - [ ] `role="presentation"` on all layout tables

@@ -1,21 +1,25 @@
 ---
 name: dashboard-design
 description: >
-  Data dashboard and admin panel design patterns for information-dense interfaces.
-  Trigger: user asks to "build a dashboard", "create an admin panel", "design analytics",
-  "make a data view", "build a settings page", "create a table view", "design a CRM",
-  "build an internal tool", or any data-heavy interface work.
+  Data dashboard and admin panel patterns for information-dense interfaces: app shell
+  layout, KPI tiles, chart selection, data tables, status badges, real-time indicators,
+  and responsive behavior. Use when the user asks to "build a dashboard", "create an admin
+  panel", "design analytics", "make a data view", "build a settings page", "create a table
+  view", "design a CRM", "build an internal tool", or any data-heavy interface work. For
+  general components use ui-design; for marketing KPI/feature cards use card-design; for
+  theming details use dark-mode.
 license: MIT
 ---
 
 # Dashboard Design
 
-## Pre-Flight: Check Design Context
+## Before You Start: Load Design Context
 
-Before generating dashboard code:
-1. Use `get_design_context` to check for existing design tokens, component libraries, or dashboard frameworks.
-2. If a Figma URL is provided, pull screenshots and metadata to match the design.
-3. Determine: What data is being shown? Who is the user? What actions do they need to take?
+1. **Read `.agents/design-context.md`** (written by the `design-context` skill). If it is missing, look for tokens in `tailwind.config.*` or `:root` CSS variables. If nothing exists, use the defaults (Primary `#2563EB`, Secondary `#7C3AED`, Accent `#F59E0B`, Tailwind gray neutrals, Inter for headings and body, Minimal style) and **tell the user defaults were used** — suggest running `design-context`.
+2. **Map tokens to CSS variables once**, then use only the variables: `--color-primary`, `--color-primary-light`, `--color-primary-dark`, `--color-secondary`, `--color-accent`, `--color-neutral-50`…`--color-neutral-900`, `--color-success`/`-warning`/`-error`, `--font-heading`, `--font-body`, `--font-mono`, `--radius`, and the 4px-base spacing scale.
+3. **Tailwind:** expose the same variables (v3 `theme.extend`, v4 `@theme`) as `primary`, `primary-light`, `primary-dark`, `secondary`, `accent`, `neutral-*`, `font-heading`, `font-body`. The `indigo-*` / `gray-*` classes in the examples below are placeholders for these tokens.
+4. **Figma:** if the user gives a Figma URL, pull it with the Figma MCP (`get_design_context`, `get_screenshot`) and match it; it overrides the context file for that design.
+5. Ask or infer: what data is shown, who uses it, what actions they take? Map Success/Warning/Error to the status badges and derive chart colors from Primary/Secondary/Accent (section 3).
 
 ---
 
@@ -26,27 +30,28 @@ Before generating dashboard code:
 ```html
 <div class="flex h-screen bg-gray-50">
   <!-- Sidebar -->
-  <aside class="w-64 bg-white border-r border-gray-200 flex flex-col">
+  <!-- Hidden below lg; open as an overlay drawer via a menu button (see Sidebar Behavior) -->
+  <aside class="hidden lg:flex w-64 shrink-0 bg-white border-r border-gray-200 flex-col">
     <!-- Logo -->
     <div class="h-16 flex items-center px-6 border-b border-gray-100">
       <img src="/logo.svg" alt="App" class="h-8" />
     </div>
     <!-- Navigation -->
-    <nav class="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+    <nav aria-label="Main" class="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
       <!-- Active item -->
-      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg
+      <a href="#" aria-current="page" class="flex items-center gap-3 px-3 py-2 rounded-lg
         bg-indigo-50 text-indigo-700 font-medium text-sm">
-        <svg class="w-5 h-5"><!-- icon --></svg>
+        <svg class="w-5 h-5" aria-hidden="true"><!-- icon --></svg>
         Dashboard
       </a>
       <!-- Inactive item -->
       <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg
         text-gray-600 hover:bg-gray-100 hover:text-gray-900 text-sm transition-colors">
-        <svg class="w-5 h-5"><!-- icon --></svg>
+        <svg class="w-5 h-5" aria-hidden="true"><!-- icon --></svg>
         Analytics
       </a>
       <!-- Section header -->
-      <div class="pt-4 pb-1 px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+      <div class="pt-4 pb-1 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
         Settings
       </div>
     </nav>
@@ -63,7 +68,7 @@ Before generating dashboard code:
   </aside>
 
   <!-- Main content -->
-  <main class="flex-1 overflow-y-auto">
+  <main class="flex-1 min-w-0 overflow-y-auto">
     <!-- Top bar -->
     <header class="h-16 bg-white border-b border-gray-200 flex items-center
       justify-between px-6 sticky top-0 z-10">
@@ -83,7 +88,8 @@ Before generating dashboard code:
 ### Sidebar Behavior
 - Desktop (lg+): Always visible, 240–280px wide.
 - Tablet (md): Collapsible to icon-only (64px) with tooltip labels.
-- Mobile (sm): Hidden, opens as overlay with backdrop.
+- Mobile (< md): Hidden, opens as an overlay drawer with backdrop from a labelled menu button (`aria-expanded`, focus moved into the drawer, Esc closes).
+- Breakpoints follow the Tailwind defaults in ui-design (md 768, lg 1024, xl 1280, 2xl 1536).
 
 ### Pattern B: Top Nav + Grid
 - Best for simpler dashboards with fewer navigation items.
@@ -101,7 +107,7 @@ Before generating dashboard code:
     <span class="text-sm font-medium text-gray-500">Total Revenue</span>
     <span class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600
       flex items-center justify-center">
-      <svg class="w-5 h-5"><!-- dollar icon --></svg>
+      <svg class="w-5 h-5" aria-hidden="true"><!-- dollar icon --></svg>
     </span>
   </div>
   <div class="mt-3">
@@ -109,10 +115,10 @@ Before generating dashboard code:
   </div>
   <div class="mt-2 flex items-center gap-1.5 text-sm">
     <span class="text-emerald-600 font-medium flex items-center gap-0.5">
-      <svg class="w-4 h-4"><!-- arrow-up icon --></svg>
-      12.5%
+      <svg class="w-4 h-4" aria-hidden="true"><!-- arrow-up icon --></svg>
+      <span class="sr-only">Up</span> +12.5%
     </span>
-    <span class="text-gray-400">vs last month</span>
+    <span class="text-gray-500">vs last month</span>
   </div>
 </div>
 ```
@@ -128,7 +134,8 @@ Before generating dashboard code:
 - **With sparkline**: Add a small inline chart below the number.
 - **With progress bar**: Show completion toward a goal.
 - **With mini table**: Top 3 items listed below the stat.
-- **Negative trend**: Use red with down-arrow for declining metrics.
+- **Negative trend**: Use red with down-arrow and a minus sign — never color alone (color-blind users).
+- Loading: show a skeleton tile of the same size, not a spinner, so the grid doesn't shift.
 
 ---
 
@@ -148,7 +155,7 @@ Before generating dashboard code:
 ### Chart Design Rules
 1. **Title every chart** with what it shows, not how to read it.
 2. **Label axes** clearly. Include units.
-3. **Limit colors** to 5–6 max. Use your primary palette.
+3. **Limit colors** to 5–6 max, derived from the brand tokens. Each series color needs 3:1 contrast against the chart background (WCAG 1.4.11); add direct labels or patterns so color isn't the only cue.
 4. **Start Y-axis at zero** for bar charts. Line charts can have non-zero baselines.
 5. **Add tooltips** for exact values on hover.
 6. **Use grid lines sparingly** — light dashed lines, not solid.
@@ -157,13 +164,15 @@ Before generating dashboard code:
 ### Chart Color Palette
 ```css
 :root {
-  --chart-1: oklch(65% 0.2 265);   /* primary blue */
-  --chart-2: oklch(70% 0.2 165);   /* teal */
-  --chart-3: oklch(75% 0.2 320);   /* pink */
-  --chart-4: oklch(80% 0.15 80);   /* amber */
-  --chart-5: oklch(65% 0.15 145);  /* green */
+  /* Lightness ≤ ~65% keeps ≥ 3:1 against white; lighten ~10–15% for dark backgrounds */
+  --chart-1: var(--color-primary);
+  --chart-2: oklch(58% 0.12 185);  /* teal */
+  --chart-3: oklch(58% 0.19 350);  /* pink */
+  --chart-4: oklch(64% 0.15 60);   /* amber/orange */
+  --chart-5: oklch(55% 0.14 145);  /* green */
 }
 ```
+If a data-visualization skill (such as dataviz) is installed, follow it for chart marks, legends, and tooltips.
 
 ---
 
@@ -182,36 +191,38 @@ Before generating dashboard code:
     </div>
     <div class="flex items-center gap-2">
       <!-- Search input -->
-      <input type="text" placeholder="Search..."
-        class="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-56
-        focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20" />
+      <input type="search" placeholder="Search orders…" aria-label="Search orders"
+        class="text-sm border border-gray-300 rounded-lg px-3 py-1.5 w-full sm:w-56
+        focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20" />
       <!-- Filter button -->
-      <button class="text-sm text-gray-600 border border-gray-200 rounded-lg
+      <button type="button" class="text-sm text-gray-600 border border-gray-300 rounded-lg
         px-3 py-1.5 hover:bg-gray-50 flex items-center gap-1.5">
-        <svg class="w-4 h-4"><!-- filter icon --></svg>
+        <svg class="w-4 h-4" aria-hidden="true"><!-- filter icon --></svg>
         Filters
       </button>
     </div>
   </div>
 
-  <!-- Table -->
+  <!-- Table: horizontal scroll wrapper so wide tables never break the page -->
+  <div class="overflow-x-auto">
   <table class="w-full text-sm">
+    <caption class="sr-only">Recent orders</caption>
     <thead>
       <tr class="border-b border-gray-100 text-left">
-        <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-          <button class="flex items-center gap-1 hover:text-gray-700">
+        <th scope="col" aria-sort="ascending" class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+          <button type="button" class="flex items-center gap-1 hover:text-gray-700">
             Customer
-            <svg class="w-3 h-3"><!-- sort icon --></svg>
+            <svg class="w-3 h-3" aria-hidden="true"><!-- sort icon --></svg>
           </button>
         </th>
-        <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+        <th scope="col" class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
           Status
         </th>
-        <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider
+        <th scope="col" class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider
           text-right">
           Amount
         </th>
-        <th class="px-6 py-3 w-12"></th>
+        <th scope="col" class="px-6 py-3 w-12"><span class="sr-only">Actions</span></th>
       </tr>
     </thead>
     <tbody class="divide-y divide-gray-50">
@@ -234,34 +245,37 @@ Before generating dashboard code:
         </td>
         <td class="px-6 py-4 text-right font-medium text-gray-900">$2,500.00</td>
         <td class="px-6 py-4">
-          <button class="text-gray-400 hover:text-gray-600">
-            <svg class="w-5 h-5"><!-- dots icon --></svg>
+          <button type="button" aria-label="Actions for Jane Cooper" aria-haspopup="menu"
+            class="p-1.5 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100">
+            <svg class="w-5 h-5" aria-hidden="true"><!-- dots icon --></svg>
           </button>
         </td>
       </tr>
     </tbody>
   </table>
+  </div>
 
   <!-- Pagination -->
-  <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between text-sm">
+  <nav aria-label="Pagination" class="px-6 py-4 border-t border-gray-100 flex items-center justify-between text-sm">
     <span class="text-gray-500">Showing 1-10 of 2,847</span>
     <div class="flex gap-1">
       <button class="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600
         hover:bg-gray-50 disabled:opacity-50" disabled>Previous</button>
-      <button class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white">1</button>
+      <button class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white" aria-current="page">1</button>
       <button class="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600
         hover:bg-gray-50">2</button>
       <button class="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600
         hover:bg-gray-50">Next</button>
     </div>
-  </div>
+  </nav>
 </div>
 ```
 
 ### Table Design Rules
 - Align numbers right, text left.
 - Use row hover highlight (`hover:bg-gray-50`).
-- Sticky header on scroll (`sticky top-0`).
+- Sticky header on scroll (`sticky top-0` on `<th>` with a solid background, or it shows rows through it).
+- Sortable columns: `<button>` inside `<th>`, with `aria-sort` on the sorted column.
 - Zebra striping is optional; subtle dividers are preferred.
 - Row actions: icon button (three dots) that opens a dropdown.
 
@@ -308,24 +322,11 @@ Before generating dashboard code:
 
 ## 6. Dark Mode Dashboard
 
-Dashboards often look better in dark mode — it reduces eye strain for data-heavy views.
+Monitoring and ops dashboards are often used in dark mode. Use the surface, text, and border tokens from the **dark-mode** skill's Complete Token System (`--bg-base` / `--bg-surface` / `--bg-elevated`, `--text-*`, `--border`) — don't define a second set here.
 
-### Surface Hierarchy (Dark)
-```css
-:root[data-theme="dark"] {
-  --bg-base: oklch(15% 0.01 265);      /* page background */
-  --bg-surface: oklch(20% 0.01 265);   /* cards */
-  --bg-elevated: oklch(25% 0.01 265);  /* dropdowns, modals */
-  --border: oklch(30% 0.01 265);       /* borders */
-  --text-primary: oklch(95% 0 0);      /* headings */
-  --text-secondary: oklch(70% 0 0);    /* body text */
-  --text-muted: oklch(50% 0 0);        /* captions */
-}
-```
-
-### Rules
+### Dashboard-Specific Rules
 - Elevation is shown through lighter surfaces, not shadows.
-- Reduce chart color saturation by ~15%.
+- Reduce chart color saturation by ~15% and raise lightness so series still hit 3:1 on the dark surface.
 - Use semi-transparent borders (`oklch(100% 0 0 / 0.08)`).
 - Active sidebar item: lighter background, not colored.
 
@@ -335,8 +336,8 @@ Dashboards often look better in dark mode — it reduces eye strain for data-hea
 
 ### Live Pulse Dot
 ```html
-<span class="relative flex h-2.5 w-2.5">
-  <span class="animate-ping absolute inline-flex h-full w-full rounded-full
+<span class="relative flex h-2.5 w-2.5" aria-hidden="true">
+  <span class="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full
     bg-emerald-400 opacity-75"></span>
   <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
 </span>
@@ -344,8 +345,8 @@ Dashboards often look better in dark mode — it reduces eye strain for data-hea
 
 ### Last Updated Timestamp
 ```html
-<span class="text-xs text-gray-400 flex items-center gap-1.5">
-  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+<span class="text-xs text-gray-500 flex items-center gap-1.5" role="status">
+  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden="true"></span>
   Live — Updated 3s ago
 </span>
 ```
@@ -354,6 +355,7 @@ Dashboards often look better in dark mode — it reduces eye strain for data-hea
 - Show a subtle countdown or progress bar before refresh.
 - Animate changed values (flash green for increase, red for decrease).
 - Never refresh the entire page — update individual data points.
+- Don't put fast-changing numbers in an `aria-live` region (it floods screen readers); announce only meaningful events (e.g. "3 new orders").
 
 ---
 
@@ -363,15 +365,14 @@ Dashboards often look better in dark mode — it reduces eye strain for data-hea
 1. **Progressive disclosure**: Show summary, expand for details.
 2. **Tabbed sections**: Don't show everything at once.
 3. **Collapsible panels**: Let users hide what they don't need.
-4. **Tooltips over labels**: Save space, add context on hover.
-5. **Consistent spacing**: Use a strict 4px grid (4, 8, 12, 16, 24, 32, 48).
-6. **Smaller base font**: Dashboard body text can be 13–14px.
-7. **Monospace for data**: Numbers in tables use tabular-nums.
+4. **Tooltips for extra context, not essential labels**: they must also open on keyboard focus and tap.
+5. **Consistent spacing**: Use the 4px-base scale from ui-design (4, 8, 12, 16, 24, 32, 48, 64).
+6. **Smaller base font**: Dashboard body text can be 13–14px (never below 12px).
+7. **Tabular figures for data**: Numbers in tables and KPIs use `tabular-nums` so digits align.
 
 ```css
 .data-table td {
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums; /* Tailwind: tabular-nums */
 }
 ```
 
@@ -383,28 +384,38 @@ Dashboards often look better in dark mode — it reduces eye strain for data-hea
 - **Mobile (< 768px)**: Single column. Cards stack. Tables become card lists. Sidebar hidden.
 - **Tablet (768–1024px)**: 2-column grid. Sidebar collapsed to icons. Simplified charts.
 - **Desktop (1024px+)**: Full layout. Sidebar expanded. Multi-column grids.
-- **Wide (1536px+)**: Add extra column or widen content area. Don't stretch beyond 1440px max.
+- **Wide (1536px+)**: Add an extra column rather than stretching; cap text-heavy content at ~1440px (`max-w-screen-2xl` or similar).
 
 ### Mobile Table Alternative
-On mobile, convert tables to stacked cards:
+Below `md` (768px), hide the table (`hidden md:block` on its wrapper) and render each row as a card:
 ```html
-<!-- Desktop: table row -->
-<!-- Mobile: card with label-value pairs -->
-<div class="sm:hidden bg-white rounded-xl border border-gray-200 p-4 space-y-2">
+<!-- Mobile only: one card per row, label-value pairs -->
+<dl class="md:hidden bg-white rounded-xl border border-gray-200 p-4 space-y-2 text-sm">
   <div class="flex justify-between">
-    <span class="text-gray-500 text-sm">Customer</span>
-    <span class="font-medium text-gray-900 text-sm">Jane Cooper</span>
+    <dt class="text-gray-500">Customer</dt>
+    <dd class="font-medium text-gray-900">Jane Cooper</dd>
   </div>
   <div class="flex justify-between">
-    <span class="text-gray-500 text-sm">Status</span>
-    <span class="bg-emerald-50 text-emerald-700 text-xs px-2 py-0.5 rounded-full">Active</span>
+    <dt class="text-gray-500">Status</dt>
+    <dd><span class="bg-emerald-50 text-emerald-700 text-xs px-2 py-0.5 rounded-full">Active</span></dd>
   </div>
   <div class="flex justify-between">
-    <span class="text-gray-500 text-sm">Amount</span>
-    <span class="font-medium text-gray-900 text-sm">$2,500.00</span>
+    <dt class="text-gray-500">Amount</dt>
+    <dd class="font-medium text-gray-900">$2,500.00</dd>
   </div>
-</div>
+</dl>
 ```
+
+---
+
+## Verify: Render and Check
+
+Don't hand over code you haven't looked at. After generating it:
+1. Screenshot it at mobile and desktop widths, e.g. `npx playwright screenshot --full-page --viewport-size=390,844 file://$PWD/index.html mobile.png`, then again with `--viewport-size=1440,900` (or point at the dev server URL).
+2. Open both images and check: no horizontal scroll or clipped/overlapping text, hierarchy reads at a glance, brand tokens are applied, images load at the right aspect ratio.
+3. Tab through once: every interactive element gets a visible focus ring, in a logical order.
+4. Also screenshot at 768px: sidebar collapses, tables scroll or become cards, charts resize instead of overflowing. Check the dark theme if you built one.
+5. Fix what you find and re-screenshot before reporting done.
 
 ---
 
@@ -420,3 +431,5 @@ On mobile, convert tables to stacked cards:
 - [ ] Empty states for tables and charts with no data
 - [ ] Dark mode considered (especially for monitoring dashboards)
 - [ ] Numbers use tabular-nums for alignment
+- [ ] Icon-only buttons and search inputs have accessible names; trends don't rely on color alone
+- [ ] Rendered and screenshotted at 390px, 768px, and 1440px (see Verify)

@@ -1,21 +1,24 @@
 ---
 name: hero-section
 description: >
-  Above-the-fold hero section patterns with production-ready code examples.
-  Trigger: user asks to "create a hero", "build a hero section", "design above the fold",
-  "make a hero banner", "landing page header", "build a homepage hero",
-  or any above-the-fold section design.
+  Above-the-fold hero section patterns (centered, split, video, minimal typography),
+  background techniques, and LCP performance, with production-ready code. Use when the user
+  asks to "create a hero", "build a hero section", "design above the fold", "make a hero
+  banner", "landing page header", "build a homepage hero", or redesigns only the top of a
+  page. For a whole multi-section marketing page use landing-page-design (which uses this
+  skill for its hero); for a static hero *image or banner graphic* use banner-design.
 license: MIT
 ---
 
 # Hero Section Design
 
-## Pre-Flight: Check Design Context
+## Before You Start: Load Design Context
 
-Before generating hero section code:
-1. Use `get_design_context` to check for existing brand colors, fonts, or design tokens.
-2. If a Figma URL is provided, pull screenshots and metadata to match the design precisely.
-3. Determine: What is the product? What is the primary CTA? What visual style fits?
+1. **Read `.agents/design-context.md`** (written by the `design-context` skill). If it is missing, look for tokens in `tailwind.config.*` or `:root` CSS variables. If nothing exists, use the defaults (Primary `#2563EB`, Secondary `#7C3AED`, Accent `#F59E0B`, Tailwind gray neutrals, Inter for headings and body, Minimal style) and **tell the user defaults were used** — suggest running `design-context`.
+2. **Map tokens to CSS variables once**, then use only the variables: `--color-primary`, `--color-primary-light`, `--color-primary-dark`, `--color-secondary`, `--color-accent`, `--color-neutral-50`…`--color-neutral-900`, `--color-success`/`-warning`/`-error`, `--font-heading`, `--font-body`, `--font-mono`, `--radius`, and the 4px-base spacing scale.
+3. **Tailwind:** expose the same variables (v3 `theme.extend`, v4 `@theme`) as `primary`, `primary-light`, `primary-dark`, `secondary`, `accent`, `neutral-*`, `font-heading`, `font-body`. The `indigo-*` / `gray-*` classes in the examples below are placeholders for these tokens.
+4. **Figma:** if the user gives a Figma URL, pull it with the Figma MCP (`get_design_context`, `get_screenshot`) and match it; it overrides the context file for that design.
+5. Ask or infer the product and the primary CTA. Let the **style archetype** pick the pattern: Minimal/Corporate → centered or split; Bold/Playful → gradient backgrounds; Luxurious → minimal typography on a dark surface.
 
 ---
 
@@ -66,9 +69,9 @@ The most versatile hero. Works for SaaS, tools, and platforms.
     <a href="#" class="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-1.5
       text-sm font-medium text-indigo-700 ring-1 ring-inset ring-indigo-600/10
       hover:bg-indigo-100 transition-colors mb-8">
-      <span class="h-1.5 w-1.5 rounded-full bg-indigo-600 animate-pulse"></span>
+      <span class="h-1.5 w-1.5 rounded-full bg-indigo-600 motion-safe:animate-pulse" aria-hidden="true"></span>
       Announcing our Series A
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
           d="M9 5l7 7-7 7"/>
       </svg>
@@ -101,7 +104,7 @@ The most versatile hero. Works for SaaS, tools, and platforms.
       <a href="#" class="w-full sm:w-auto inline-flex items-center justify-center gap-2
         text-gray-700 px-8 py-3.5 rounded-xl font-semibold text-lg
         hover:bg-gray-100 transition-colors">
-        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
           <path d="M6.3 2.84A1.5 1.5 0 004 4.11v11.78a1.5 1.5 0 002.3 1.27l9.344-5.891a1.5 1.5 0 000-2.538L6.3 2.841z"/>
         </svg>
         Watch demo
@@ -110,21 +113,21 @@ The most versatile hero. Works for SaaS, tools, and platforms.
 
     <!-- Trust signals -->
     <div class="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2
-      text-sm text-gray-400">
+      text-sm text-gray-500">
       <span class="flex items-center gap-1.5">
-        <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+        <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
           <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/>
         </svg>
         No credit card required
       </span>
       <span class="flex items-center gap-1.5">
-        <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+        <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
           <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/>
         </svg>
         Free for individuals
       </span>
       <span class="flex items-center gap-1.5">
-        <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+        <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
           <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/>
         </svg>
         Setup in 2 minutes
@@ -135,8 +138,8 @@ The most versatile hero. Works for SaaS, tools, and platforms.
     <div class="mt-16 relative">
       <div class="rounded-2xl border border-gray-200/60 shadow-2xl shadow-gray-900/10
         overflow-hidden bg-white">
-        <img src="/dashboard-preview.png" alt="Product dashboard"
-          class="w-full" fetchpriority="high" />
+        <img src="/dashboard-preview.webp" alt="Product dashboard showing weekly revenue"
+          width="1280" height="800" class="w-full h-auto" fetchpriority="high" />
       </div>
       <!-- Decorative glow behind image -->
       <div class="absolute -inset-4 -z-10 bg-gradient-to-b from-indigo-100/50
@@ -178,7 +181,7 @@ Best for products with a strong visual (app screenshots, mockups).
           <a href="#" class="text-gray-700 px-6 py-3 rounded-xl font-semibold
             hover:bg-gray-100 transition-colors flex items-center gap-2">
             See how it works
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M17 8l4 4m0 0l-4 4m4-4H3"/>
             </svg>
@@ -201,8 +204,9 @@ Best for products with a strong visual (app screenshots, mockups).
       <!-- Visual -->
       <div class="relative lg:ml-auto">
         <div class="relative z-10">
-          <img src="/app-mockup.png" alt="App interface"
-            class="w-full max-w-md mx-auto rounded-3xl shadow-2xl"
+          <img src="/app-mockup.webp" alt="App home screen with monthly budget overview"
+            width="448" height="896"
+            class="w-full h-auto max-w-md mx-auto rounded-3xl shadow-2xl"
             fetchpriority="high" />
         </div>
         <!-- Background decoration -->
@@ -219,13 +223,15 @@ Best for products with a strong visual (app screenshots, mockups).
 ## 4. Hero Pattern: Video / Animated Background
 
 ```html
-<section class="relative h-screen min-h-[600px] max-h-[900px] flex items-center overflow-hidden">
-  <!-- Video background -->
+<!-- svh, not h-screen/100vh: 100vh is taller than the visible area on mobile browsers -->
+<section class="relative h-svh min-h-[600px] max-h-[900px] flex items-center overflow-hidden">
+  <!-- Video background (decorative) -->
   <video
-    autoplay muted loop playsinline
+    autoplay muted loop playsinline aria-hidden="true"
     poster="/hero-poster.jpg"
     class="absolute inset-0 w-full h-full object-cover"
   >
+    <source src="/hero-bg.webm" type="video/webm" />
     <source src="/hero-bg.mp4" type="video/mp4" />
   </video>
 
@@ -249,8 +255,14 @@ Best for products with a strong visual (app screenshots, mockups).
     </div>
   </div>
 
+  <!-- Pause control: required for motion that lasts > 5s (WCAG 2.2.2) -->
+  <button type="button" class="absolute bottom-6 right-6 z-10 rounded-full bg-black/50
+    px-4 py-2 text-sm text-white focus-visible:outline focus-visible:outline-2
+    focus-visible:outline-white">Pause background video</button>
+  <!-- JS: toggle video.pause()/play() and swap the label to "Play background video" -->
+
   <!-- Scroll indicator -->
-  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 motion-safe:animate-bounce" aria-hidden="true">
     <svg class="w-6 h-6 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
         d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
@@ -262,8 +274,9 @@ Best for products with a strong visual (app screenshots, mockups).
 ### Video Hero Rules
 - Keep video 5–15 seconds, looping.
 - File size under 5MB. Use WebM + MP4 for compatibility.
-- Always provide a `poster` image for LCP.
+- Always provide a `poster` image — it is the LCP candidate, so preload it with `fetchpriority="high"`.
 - Use `playsinline` for iOS.
+- Provide a pause button, and under `prefers-reduced-motion: reduce` don't autoplay — show the poster only (`video.pause()` when `matchMedia('(prefers-reduced-motion: reduce)').matches`).
 - Text must have sufficient contrast against the overlay.
 
 ---
@@ -273,7 +286,7 @@ Best for products with a strong visual (app screenshots, mockups).
 For premium brands, agencies, and portfolios.
 
 ```html
-<section class="min-h-screen flex items-center bg-gray-950">
+<section class="min-h-svh flex items-center bg-gray-950">
   <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-32">
     <h1 class="text-5xl sm:text-7xl lg:text-9xl font-extrabold text-white
       tracking-tighter leading-[0.9]">
@@ -312,9 +325,12 @@ For premium brands, agencies, and portfolios.
 ### Animated Gradient
 ```css
 .animated-gradient {
-  background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+  /* Build the stops from brand tokens, not arbitrary colors */
+  background: linear-gradient(-45deg, var(--color-primary), var(--color-secondary), var(--color-accent), var(--color-primary-light));
   background-size: 400% 400%;
-  animation: gradient-shift 15s ease infinite;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .animated-gradient { animation: gradient-shift 15s ease infinite; }
 }
 @keyframes gradient-shift {
   0% { background-position: 0% 50%; }
@@ -374,8 +390,8 @@ Desktop (1024px+):
 <picture>
   <source media="(min-width: 1024px)" srcset="/hero-desktop.webp" />
   <source media="(min-width: 640px)" srcset="/hero-tablet.webp" />
-  <img src="/hero-mobile.webp" alt="Product preview"
-    class="w-full rounded-2xl" fetchpriority="high" />
+  <img src="/hero-mobile.webp" alt="Product preview" width="640" height="480"
+    class="w-full h-auto rounded-2xl" fetchpriority="high" />
 </picture>
 ```
 
@@ -386,20 +402,31 @@ Desktop (1024px+):
 The hero is almost always the Largest Contentful Paint element. Optimize it.
 
 ### Rules
-1. **Preload the hero image**: `<link rel="preload" href="/hero.webp" as="image" />`
-2. **Use `fetchpriority="high"`** on the hero image tag.
-3. **Never lazy-load** the hero image.
-4. **Inline critical CSS** for the hero section.
+1. **Use `fetchpriority="high"`** on the hero `<img>` and give it `width`/`height` (prevents CLS).
+2. **Never lazy-load** the hero image (`loading="lazy"` delays LCP).
+3. **Preload only late-discovered images** — CSS backgrounds, JS-rendered heroes, video posters, `<picture>` art direction. An `<img>` already in the HTML doesn't need it.
+4. **Inline critical CSS** for the hero section. Don't animate the headline in from `opacity: 0` — it delays LCP.
 5. **Use WebP/AVIF** format with fallback.
-6. **Size appropriately**: Don't serve a 4000px image for a 1200px container.
+6. **Size appropriately**: Don't serve a 4000px image for a 1200px container; use `srcset`/`sizes`.
 
 ```html
 <head>
-  <link rel="preload" href="/hero.webp" as="image"
+  <link rel="preload" href="/hero.webp" as="image" fetchpriority="high"
     imagesrcset="/hero-400.webp 400w, /hero-800.webp 800w, /hero-1200.webp 1200w"
     imagesizes="100vw" />
 </head>
 ```
+
+---
+
+## Verify: Render and Check
+
+Don't hand over code you haven't looked at. After generating it:
+1. Screenshot it at mobile and desktop widths, e.g. `npx playwright screenshot --full-page --viewport-size=390,844 file://$PWD/index.html mobile.png`, then again with `--viewport-size=1440,900` (or point at the dev server URL).
+2. Open both images and check: no horizontal scroll or clipped/overlapping text, hierarchy reads at a glance, brand tokens are applied, images load at the right aspect ratio.
+3. Tab through once: every interactive element gets a visible focus ring, in a logical order.
+4. Check the 390px screenshot shows headline + primary CTA above the fold, and that the LCP image is not lazy-loaded (Lighthouse "LCP element" audit if a server is running).
+5. Fix what you find and re-screenshot before reporting done.
 
 ---
 
@@ -410,8 +437,10 @@ The hero is almost always the Largest Contentful Paint element. Optimize it.
 - [ ] Primary CTA is large, high-contrast, and action-oriented
 - [ ] Secondary CTA is visually subordinate
 - [ ] Trust signals appear near the CTA
-- [ ] Hero image/visual is preloaded with `fetchpriority="high"`
+- [ ] Hero image has `fetchpriority="high"`, `width`/`height`, and no `loading="lazy"`
+- [ ] Decorative SVGs are `aria-hidden`; text over images/video meets 4.5:1
+- [ ] Rendered and screenshotted at 390px and 1440px (see Verify)
 - [ ] Responsive: text scales, layout adapts, images swap
 - [ ] Background adds visual interest without competing with content
-- [ ] Animation respects `prefers-reduced-motion`
+- [ ] Animation respects `prefers-reduced-motion`; background video has a pause control
 - [ ] Above the fold loads in under 2.5s (LCP target)

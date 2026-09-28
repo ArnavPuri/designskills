@@ -1,21 +1,26 @@
 ---
 name: ui-design
 description: >
-  Core UI design patterns and component architecture for building polished interfaces.
-  Trigger: user asks to "design a UI", "build a component", "create an interface",
-  "style a form", "make it look good", "improve the design", "add hover states",
-  "make it accessible", or requests any general UI/UX design work.
+  Core UI patterns for components and app screens: tokens, visual hierarchy, interactive
+  states, forms, navigation, feedback states, accessibility, and responsive rules. Use when
+  the user asks to "design a UI", "build a component", "create an interface", "style a form",
+  "make it look good", "improve the design", "add hover states", "make it accessible", or any
+  general UI work. This is the base the other UI skills build on; prefer landing-page-design
+  for full marketing pages, hero-section for only the above-the-fold block, card-design for
+  cards, dashboard-design for data-dense admin views, mobile-ui-design for touch-first
+  screens, dark-mode for theming, and email-design for HTML email.
 license: MIT
 ---
 
 # UI Design Patterns
 
-## Pre-Flight: Check Design Context
+## Before You Start: Load Design Context
 
-Before generating any UI code, check if the user has an active Figma file or design system context:
-1. Use `get_design_context` to retrieve any existing design tokens, color palettes, or component specs.
-2. If a Figma URL is provided, pull metadata and screenshots to match the design precisely.
-3. If no design context exists, proceed with the opinionated defaults below.
+1. **Read `.agents/design-context.md`** (written by the `design-context` skill). If it is missing, look for tokens in `tailwind.config.*` or `:root` CSS variables. If nothing exists, use the defaults (Primary `#2563EB`, Secondary `#7C3AED`, Accent `#F59E0B`, Tailwind gray neutrals, Inter for headings and body, Minimal style) and **tell the user defaults were used** — suggest running `design-context`.
+2. **Map tokens to CSS variables once**, then use only the variables: `--color-primary`, `--color-primary-light`, `--color-primary-dark`, `--color-secondary`, `--color-accent`, `--color-neutral-50`…`--color-neutral-900`, `--color-success`/`-warning`/`-error`, `--font-heading`, `--font-body`, `--font-mono`, `--radius`, and the 4px-base spacing scale.
+3. **Tailwind:** expose the same variables (v3 `theme.extend`, v4 `@theme`) as `primary`, `primary-light`, `primary-dark`, `secondary`, `accent`, `neutral-*`, `font-heading`, `font-body`. The `indigo-*` / `gray-*` classes in the examples below are placeholders for these tokens.
+4. **Figma:** if the user gives a Figma URL, pull it with the Figma MCP (`get_design_context`, `get_screenshot`) and match it; it overrides the context file for that design.
+5. Let the **style archetype** set radius, shadow depth, and how much of section 9 (trends) to use — Minimal and Corporate use none of it.
 
 ---
 
@@ -37,10 +42,10 @@ Build UI in layers. Never start with a full page — start with the smallest pie
 - Components should be stateless by default. Lift state up.
 
 ```css
-/* Token layer */
+/* Token layer — values come from .agents/design-context.md (defaults shown) */
 :root {
-  --color-primary: oklch(65% 0.25 265);
-  --color-surface: oklch(98% 0.005 265);
+  --color-primary: #2563EB;
+  --color-surface: #FFFFFF;
   --radius-md: 0.75rem;
   --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.05);
   --space-1: 0.25rem;
@@ -49,8 +54,12 @@ Build UI in layers. Never start with a full page — start with the smallest pie
   --space-4: 1rem;
   --space-6: 1.5rem;
   --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
 }
 ```
+
+**Canonical spacing scale (all UI skills):** 4px base — 4, 8, 12, 16, 24, 32, 48, 64px (Tailwind `1, 2, 3, 4, 6, 8, 12, 16`). Don't use off-scale values.
 
 ---
 
@@ -62,7 +71,7 @@ Control where the eye goes. Rank every element by importance and apply these lev
 |-------|--------------|-----------------|--------------|
 | **Size** | 2rem+ heading | 1rem body | 0.75rem caption |
 | **Weight** | 700–800 bold | 500 medium | 400 regular |
-| **Color** | Primary or high-contrast text | Muted text (60% opacity) | Subtle text (40% opacity) |
+| **Color** | Primary or high-contrast text | Muted text (neutral-600) | Subtle text (neutral-500 — lightest gray that still passes 4.5:1 on white) |
 | **Spacing** | More whitespace around it | Standard spacing | Tighter spacing |
 | **Position** | Top-left or center | Mid-page | Bottom or sidebar |
 
@@ -82,7 +91,7 @@ Blur your eyes or zoom out to 25%. If you can still identify the primary action 
 </p>
 
 <!-- Low emphasis -->
-<span class="text-xs text-gray-400 uppercase tracking-wide">
+<span class="text-xs text-gray-500 uppercase tracking-wide">
   Updated 2 hours ago
 </span>
 ```
@@ -102,7 +111,7 @@ Every interactive element needs all five states. No exceptions.
   border-radius: var(--radius-md);
   padding: var(--space-2) var(--space-4);
   font-weight: 600;
-  transition: all 150ms ease;
+  transition: background-color 150ms ease, box-shadow 150ms ease, transform 150ms ease, filter 150ms ease;
 
   /* Hover — subtle lift or brightness shift */
   &:hover {
@@ -124,11 +133,13 @@ Every interactive element needs all five states. No exceptions.
     outline-offset: 2px;
   }
 
-  /* Disabled — desaturated, no pointer */
+  /* Disabled — dimmed, no hover/active effects (don't add pointer-events: none — it hides the not-allowed cursor) */
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    pointer-events: none;
+    transform: none;
+    box-shadow: none;
+    filter: none;
   }
 }
 ```
@@ -138,8 +149,8 @@ Every interactive element needs all five states. No exceptions.
 <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold
   hover:bg-indigo-500 hover:-translate-y-0.5 hover:shadow-lg
   active:translate-y-0 active:bg-indigo-700
-  focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600
-  disabled:opacity-50 disabled:cursor-not-allowed
+  focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600
+  disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none
   transition-all duration-150">
   Click me
 </button>
@@ -151,12 +162,13 @@ Every interactive element needs all five states. No exceptions.
 
 ### Loading States
 - **Skeleton screens** over spinners. Show the shape of content that's coming.
-- Use `animate-pulse` on placeholder blocks.
+- Use `motion-safe:animate-pulse` on placeholder blocks, and mark the region `aria-busy="true"` with an sr-only "Loading…" label.
 - Show loading inline near the action that triggered it.
 
 ```html
 <!-- Skeleton card -->
-<div class="animate-pulse space-y-3">
+<div class="motion-safe:animate-pulse space-y-3" aria-busy="true">
+  <span class="sr-only">Loading…</span>
   <div class="h-48 bg-gray-200 rounded-xl"></div>
   <div class="h-4 bg-gray-200 rounded w-3/4"></div>
   <div class="h-4 bg-gray-200 rounded w-1/2"></div>
@@ -165,20 +177,21 @@ Every interactive element needs all five states. No exceptions.
 
 ### Success State
 - Green accent, checkmark icon, brief confirmation text.
-- Auto-dismiss after 3–5 seconds.
+- Announce it with `role="status"` (polite live region). Auto-dismiss after 5+ seconds, and never auto-dismiss messages that contain an action.
 
 ### Error State
 - Red accent, descriptive message, recovery action.
 - Never just say "Error." Say what went wrong and what to do.
+- Don't rely on red alone: pair it with an icon and text; use `role="alert"` for errors that appear after submit.
 
 ### Empty State
 - Illustration or icon, explanation, primary action to fix it.
 ```html
 <div class="text-center py-16">
-  <svg class="mx-auto h-12 w-12 text-gray-400"><!-- inbox icon --></svg>
+  <svg class="mx-auto h-12 w-12 text-gray-400" aria-hidden="true"><!-- inbox icon --></svg>
   <h3 class="mt-4 text-lg font-semibold text-gray-900">No messages yet</h3>
   <p class="mt-2 text-sm text-gray-500">Start a conversation to see messages here.</p>
-  <button class="mt-6 bg-indigo-600 text-white px-4 py-2 rounded-lg">
+  <button type="button" class="mt-6 bg-indigo-600 text-white px-4 py-2 rounded-lg">
     New message
   </button>
 </div>
@@ -191,7 +204,7 @@ Every interactive element needs all five states. No exceptions.
 ### Sidebar Navigation
 - Width: 240–280px desktop, collapsible to 64px (icon-only).
 - Group items by category with subtle section headers.
-- Active item: filled background, bold text, left accent bar.
+- Active item: filled background, bold text, left accent bar, and `aria-current="page"`.
 
 ### Top Navigation
 - Fixed/sticky at top. Height: 56–64px.
@@ -200,7 +213,7 @@ Every interactive element needs all five states. No exceptions.
 
 ### Tabs
 - Use for switching views within the same context.
-- Active tab: bottom border (2–3px) in primary color + bold text.
+- Active tab: bottom border (2–3px) in primary color + bold text. Use `role="tablist"`/`role="tab"` with `aria-selected` and arrow-key navigation (or plain links if each tab is its own URL).
 - Never more than 7 tabs. Use dropdown overflow for more.
 
 ### Breadcrumbs
@@ -233,8 +246,11 @@ Every interactive element needs all five states. No exceptions.
       focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20
       transition-colors"
     placeholder="you@example.com"
+    autocomplete="email"
+    aria-describedby="email-error"
   />
-  <p class="text-sm text-red-600 hidden">Please enter a valid email address.</p>
+  <!-- On error: remove `hidden` and set aria-invalid="true" on the input -->
+  <p id="email-error" class="text-sm text-red-600 hidden">Please enter a valid email address.</p>
 </div>
 ```
 
@@ -245,15 +261,21 @@ Every interactive element needs all five states. No exceptions.
 Accessibility is not an afterthought. It is a design constraint applied from the start.
 
 ### Contrast
-- **Normal text**: 4.5:1 minimum contrast ratio (WCAG AA).
-- **Large text** (18px+ or 14px+ bold): 3:1 minimum.
-- **Interactive elements**: 3:1 against adjacent colors.
+- **Normal text**: 4.5:1 minimum contrast ratio (WCAG 2.2 AA).
+- **Large text** (≥24px regular, or ≥18.66px bold): 3:1 minimum.
+- **Non-text UI** (input borders, icons, focus rings, chart marks): 3:1 against adjacent colors.
+- Placeholder text is not a label and should still meet 4.5:1 if it carries information.
 - Use oklch color space for perceptually uniform contrast adjustments.
 
 ### Focus Indicators
 - Never remove `outline` without replacing it.
 - Use `focus-visible` (not `focus`) to avoid showing rings on mouse click.
-- Ring: 2px solid, offset 2px, primary color.
+- Ring: 2px solid, offset 2px, primary color, with 3:1 contrast against the background.
+- Focused elements must not be hidden behind sticky headers/footers (WCAG 2.4.11) — add `scroll-padding-top` equal to the header height.
+
+### Target Size
+- WCAG 2.5.8 (AA): pointer targets at least **24×24 CSS px** (or spaced so a 24px circle doesn't overlap a neighbour).
+- Platform guidance for touch: **44×44pt** (Apple HIG), **48×48dp** (Material). Use 44px+ for primary touch targets.
 
 ### Semantic Structure
 - One `<h1>` per page.
@@ -267,7 +289,9 @@ Accessibility is not an afterthought. It is a design constraint applied from the
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 ```
@@ -276,7 +300,7 @@ Accessibility is not an afterthought. It is a design constraint applied from the
 
 ## 8. Responsive Breakpoint Strategy
 
-### Breakpoints (Tailwind defaults)
+### Breakpoints (Tailwind defaults — canonical for all UI skills)
 | Name | Width | Target |
 |------|-------|--------|
 | `sm` | 640px | Large phones landscape |
@@ -319,15 +343,17 @@ Accessibility is not an afterthought. It is a design constraint applied from the
   border-radius: 1rem;
 }
 ```
+Glass only works over a busy background — check text contrast against the *lightest* area behind it, and give a solid fallback: `@supports not (backdrop-filter: blur(1px)) { .glass { background: oklch(20% 0.02 265 / 0.9); } }`.
 
 ### Bento Grid
 ```css
 .bento {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  grid-auto-rows: 200px;
+  grid-auto-rows: minmax(200px, auto); /* fixed 200px rows clip long content */
   gap: 1rem;
 }
+@media (max-width: 767px) { .bento { grid-template-columns: 1fr; } .bento .featured { grid-column: auto; grid-row: auto; } }
 .bento .featured {
   grid-column: span 2;
   grid-row: span 2;
@@ -354,7 +380,7 @@ Accessibility is not an afterthought. It is a design constraint applied from the
 ### `:has()` — Parent Selector
 ```css
 /* Highlight form group when input is focused */
-.form-group:has(input:focus) {
+.form-group:has(input:focus-visible) {
   background: oklch(97% 0.01 265);
   border-color: var(--color-primary);
 }
@@ -381,10 +407,15 @@ Accessibility is not an afterthought. It is a design constraint applied from the
 
 ### Scroll-Driven Animations
 ```css
-.fade-in {
-  animation: fade-in linear both;
-  animation-timeline: view();
-  animation-range: entry 0% entry 100%;
+/* Progressive enhancement: only where supported and motion is OK */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .fade-in {
+      animation: fade-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 100%;
+    }
+  }
 }
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(2rem); }
@@ -394,17 +425,30 @@ Accessibility is not an afterthought. It is a design constraint applied from the
 
 ---
 
+## Verify: Render and Check
+
+Don't hand over code you haven't looked at. After generating it:
+1. Screenshot it at mobile and desktop widths, e.g. `npx playwright screenshot --full-page --viewport-size=390,844 file://$PWD/index.html mobile.png`, then again with `--viewport-size=1440,900` (or point at the dev server URL).
+2. Open both images and check: no horizontal scroll or clipped/overlapping text, hierarchy reads at a glance, brand tokens are applied, images load at the right aspect ratio.
+3. Tab through once: every interactive element gets a visible focus ring, in a logical order.
+4. Check every state you built (hover, focus, disabled, loading, empty, error) at least once, and run a contrast check on muted text.
+5. Fix what you find and re-screenshot before reporting done.
+
+---
+
 ## Quick Reference: Design Checklist
 
 Before shipping any UI component, verify:
 
 - [ ] Visual hierarchy is clear (squint test passes)
 - [ ] All interactive elements have hover, active, focus-visible, and disabled states
-- [ ] Color contrast meets WCAG AA (4.5:1 for text)
+- [ ] Color contrast meets WCAG 2.2 AA (4.5:1 text, 3:1 large text and UI components)
+- [ ] Targets are ≥24×24px (44px+ for primary touch targets)
+- [ ] Rendered and screenshotted at 390px and 1440px (see Verify)
 - [ ] Focus order is logical (tab through the page)
 - [ ] Responsive at all breakpoints (320px to 1920px)
 - [ ] Loading, empty, and error states are designed
-- [ ] Spacing is consistent (using a 4px/8px grid)
+- [ ] Spacing uses the 4px-base scale (4, 8, 12, 16, 24, 32, 48, 64)
 - [ ] Typography scale is limited to 4–6 sizes
 - [ ] Motion respects `prefers-reduced-motion`
 - [ ] Semantic HTML is used (landmarks, headings, button vs. link)
