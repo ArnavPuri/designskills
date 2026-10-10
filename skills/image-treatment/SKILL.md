@@ -75,7 +75,7 @@ Apply stunning visual effects to images using CSS filters, blend modes, masks, a
 ```css
 .image-container { position: relative; }
 .image-container::after {
-  content: ''; position: absolute; inset: 0;
+  content: ''; position: absolute; inset: 0; pointer-events: none;
   background: var(--brand-500); mix-blend-mode: multiply; opacity: 0.6;
 }
 ```
@@ -156,10 +156,15 @@ Grayscale image **multiplied** onto the highlight color (white → highlight, bl
 
 ```css
 .image-text-mask {
-  background-image: url('photo.jpg'); background-size: cover;
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text; font-size: 8rem; font-weight: 900;
-  color: transparent; /* fallback if background-clip: text is unsupported */
+  color: var(--brand-700, #1a1a2e); /* readable fallback; check page contrast */
+  font-size: 8rem; font-weight: 900;
+}
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+  .image-text-mask {
+    background-image: url('photo.jpg'); background-size: cover;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+  }
 }
 ```
 
@@ -211,7 +216,7 @@ Only for display-size decorative text; the photo under the letters must still gi
 ```css
 .image-overlay-gradient { position: relative; }
 .image-overlay-gradient::after {
-  content: ''; position: absolute; inset: 0;
+  content: ''; position: absolute; inset: 0; pointer-events: none;
   background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.3) 40%, transparent 100%);
 }
 .image-overlay-gradient .content { position: relative; z-index: 1; color: white; }
@@ -228,8 +233,12 @@ Text over images must still meet WCAG contrast (4.5:1, or 3:1 for ≥24px / ≥1
   background: oklch(from var(--brand-500) l c h / 0.85);
   display: grid; place-items: center; opacity: 0; transition: opacity 0.3s ease;
 }
-.card-image:hover .overlay { opacity: 1; }
+.card-image:hover .overlay,
+.card-image:focus-visible .overlay,
+.card-image:focus-within .overlay { opacity: 1; }
 ```
+
+Use an actual link or button for an actionable card and retain its visible focus indicator. Essential information must remain visible on touch devices; if the overlay contains controls, hide them from keyboard focus while concealed rather than relying on opacity alone.
 
 ---
 
