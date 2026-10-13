@@ -1,7 +1,8 @@
 ---
 name: image-generation
 description: >
-  Foundational skill for AI-powered image generation using Gemini 3.1 Flash Image Preview.
+  Foundational skill for AI-powered image generation using Gemini 3.1 Flash Image Preview
+  or the optional Atlas Cloud provider.
   Handles text-to-image, image editing, multi-turn refinement, and batch generation. Use
   directly for one-off images; for posters, ads, thumbnails, social posts, etc. prefer the
   matching graphic design skill, which layers format-specific rules on top of this pipeline.
@@ -10,9 +11,9 @@ description: >
 license: MIT
 ---
 
-# Image Generation with Gemini 3.1 Flash
+# Image Generation
 
-Foundational skill for generating and editing images using Google's Gemini 3.1 Flash Image Preview model. All graphic design skills reference this skill for the generation pipeline.
+Foundational skill for generating and editing images. Google's Gemini 3.1 Flash Image Preview remains the default; Atlas Cloud is an explicit opt-in provider. All graphic design skills reference this skill for the generation pipeline.
 
 ---
 
@@ -21,6 +22,12 @@ Foundational skill for generating and editing images using Google's Gemini 3.1 F
 ```bash
 pip install google-genai Pillow
 export GEMINI_API_KEY="your-api-key"
+```
+
+Optional Atlas Cloud setup (the Atlas CLI uses only the Python standard library):
+
+```bash
+export ATLASCLOUD_API_KEY="your-api-key"
 ```
 
 ---
@@ -202,6 +209,29 @@ python <image-generation>/scripts/export-sizes.py --list   # all presets and gro
 ```
 
 It warns when a crop keeps under half of the master or has to upscale -- generate extreme ratios (8:1, 1:4) separately with the matching `--aspect-ratio` instead. Read a few exports to confirm nothing important was cropped.
+
+### Optional Atlas Cloud Provider
+
+Use Atlas explicitly when you want its unified image API. Gemini remains the
+default workflow above.
+
+```bash
+# Text-to-image
+python <image-generation>/scripts/atlas-generate.py --prompt "..." --output graphic.png
+
+# Product image + prompt
+python <image-generation>/scripts/atlas-generate.py --image product.png --prompt "..." \
+    --size 1024x1024 --quality medium --output graphic.png
+
+# Follow-up edit: the first result becomes the reference for the second request
+python <image-generation>/scripts/atlas-generate.py --prompt "Create a poster..." --output v1.png \
+    --then "Change to dark mode" --output-then v2.png
+```
+
+The Atlas path uses `openai/gpt-image-2/text-to-image` for new images and
+`openai/gpt-image-2/edit` when a reference image is supplied. Each billable
+generation POST is submitted exactly once and is never retried automatically;
+only read-only prediction GETs use bounded retries.
 
 ---
 

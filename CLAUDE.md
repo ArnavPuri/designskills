@@ -12,7 +12,7 @@ A collection of AI agent skills for graphic design and UI design. Skills are Mar
 - `design-context` is the foundational skill — all other skills reference it for brand/style context
 - `image-generation` provides the Gemini 3.1 Flash Image Preview pipeline for AI image generation
 - `skills/[skill-name]/scripts/` — helper scripts bundled with the skill that uses them (so they ship with `npx skills add`). Skills refer to them as `<skill-name>/scripts/file`, meaning that skill's directory:
-  - `image-generation/scripts/gemini-generate.py` (Gemini CLI), `export-sizes.py` (one master → platform sizes)
+  - `image-generation/scripts/gemini-generate.py` (Gemini CLI), `atlas-generate.py` (optional Atlas Cloud CLI), `export-sizes.py` (one master → platform sizes)
   - `graphic-design/scripts/render.mjs` (HTML → exact-size PNG/PDF), `design-critique/scripts/audit.mjs` (screenshots + measurements)
   - `design-context/scripts/contrast.py` (WCAG checks), `color-palette/scripts/palette.py` (OKLCH scales)
 - `tools/gemini-generate.py` — compatibility wrapper for the generator above
